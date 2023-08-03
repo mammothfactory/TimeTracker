@@ -101,7 +101,15 @@ def clock_out(sanitizedID: str):
     inputBox.set_value('')
 
 
-def sanitize_employee_id(text):
+def sanitize_employee_id(text: str) -> str:
+    """ Converts all user bad input to valid ouput and updates UI label visible to control datatbase writes
+
+    Args:
+        text (str): Raw user input from input text box
+
+    Returns:
+        str: A string with all blank spaces and non-digit characters removed
+    """
     global sanitizedID
 
     sanitizedID = text.replace(" ", "")
@@ -115,14 +123,21 @@ def sanitize_employee_id(text):
 
     return sanitizedID
 
+def generate_report(db):
+    dateObj = datetime.now().time()
+    if  dateObj > ELEVEN_PM:
+        db.insert_weekly_report_table(dateObj)
+        db.export_table_to_csv("WeeklyReportTable")
+
+
 if __name__ in {"__main__", "__mp_main__"}:
     db = Database()
     
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
+    ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: generate_report(db))
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
-        
     
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
@@ -132,7 +147,6 @@ if __name__ in {"__main__", "__mp_main__"}:
                         validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: len(sanitizedID) <= GC.VALID_EMPLOYEE_ID_LENGTH})
     
     inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;")
-    #inputBox.classes("max-h-0")
 
     # Invisible character https://invisibletext.com/#google_vignette
     with ui.row().classes("self-center"):
@@ -149,13 +163,4 @@ if __name__ in {"__main__", "__mp_main__"}:
     tryAgainLabel = ui.label('INTENTAR OTRA VEZ (TRY AGAIN)').style("color: red; font-size: 400%; font-weight: 300").classes("self-center")
     
     ui.run()
-    
-   
-    """ 
-    current_time = datetime.now().time()
-    if current_time > ELEVEN_PM:
-        # 2023-08-01_2023-08-07_LaborerTimeReport
-        csvFilename = datetime.now().isoformat(timespec="minutes")[0:10] + "_TimeReport.csv"
-        db.export_table_to_csv("WeeklyReportTable", csvFilename)
-     """   
     

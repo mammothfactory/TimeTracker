@@ -40,7 +40,7 @@ class Database:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS UsersTable (id INTEGER PRIMARY KEY, employeeId INTEGER, firstName TEXT, lastName TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckInTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckOutTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, employeeId INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER, day7 INTEGER)''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER)''')
         
         # Create debuging logg
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS DebugLoggingTable (id INTEGER PRIMARY KEY, logMessage TEXT)''')
@@ -199,8 +199,47 @@ class Database:
 
         return results
     
-    def search_weekly_report_table(self, search):
-        pass
+    def insert_weekly_report_table(self, id: int, dateToCalulate: datetime):
+        # data = self.query_table("WeeklyReportTable") 
+        # self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER)''')
+        # self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
+        # self.cursor.execute("UPDATE UsersTable SET employeeId = ?, firstName = ?, lastName = ? WHERE id = ?", (id, first, last, idPrimaryKeyToUpdate))
+        
+        try:
+            # Get the day of the week (0=Monday, 1=Tuesday, ..., 6=Sunday)
+            dayOfWeek = dateToCalulate.weekday()
+            #if DEBUGGING: dayOfWeek = GC.MONDAY
+            dailyHours = self.calculate_time_delta(id, dateToCalulate) 
+            
+            results = self.search_users_table(id)
+            if len(results) > 0:
+                idPrimaryKeyToUpdate = results[0][0]
+                
+                if dayOfWeek == GC.MONDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day0 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.TUESDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day1 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.WEDNESDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day2 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.THURSDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day3 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.FRIDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day4 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.SATURDAY:
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day5 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.SUNDAY: 
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day6 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                
+                self.commit_changes()
+            else:
+                print("INVALID USER ID")
+                    
+        except ValueError:
+            self.insert_debug_logging_table(f'Invalid date format when generating weekly report on {dateToCalulate}')
+            
+        except IndexError:
+            print("INVALID USER ID")
+
     
     def calculate_time_delta(self, id: int, dateToCalulate: str) -> float:
 
@@ -234,7 +273,7 @@ class Database:
         return elaspedHours
     
     
-    def export_table_to_csv(self, table_name, output_file):
+    def export_table_to_csv(self, table_name):
         # Connect to the SQLite database
         conn = sqlite3.connect('TimeReport.db')
         cursor = conn.cursor()
@@ -246,7 +285,9 @@ class Database:
         # Get the column names
         column_names = [description[0] for description in cursor.description]
 
-        # Write data to CSV file, 
+        # Write data to CSV file
+        if table_name == "WeeklyReportTable":
+            output_file = datetime.now().isoformat(timespec="minutes")[0:10] + "_LaborerTimeReport.csv"  #TODO: 2023-08-01_2023-08-07_LaborerTimeReport
         with open(output_file, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(column_names[1:])
