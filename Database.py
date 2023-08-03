@@ -40,6 +40,7 @@ class Database:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS UsersTable (id INTEGER PRIMARY KEY, employeeId INTEGER, firstName TEXT, lastName TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckInTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckOutTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, employeeId INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER, day7 INTEGER)''')
         
         # Create debuging logg
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS DebugLoggingTable (id INTEGER PRIMARY KEY, logMessage TEXT)''')
@@ -87,8 +88,8 @@ class Database:
         results = self.search_users_table(id)
 
         if len(results) > 0:
-            idToUpdate = results[0][0]
-            self.cursor.execute("UPDATE UsersTable SET employeeId = ?, firstName = ?, lastName = ? WHERE id = ?", (id, first, last, idToUpdate))
+            idPrimaryKeyToUpdate = results[0][0]
+            self.cursor.execute("UPDATE UsersTable SET employeeId = ?, firstName = ?, lastName = ? WHERE id = ?", (id, first, last, idPrimaryKeyToUpdate))
         else:
             self.cursor.execute("INSERT INTO UsersTable (employeeId, firstName, lastName) VALUES (?, ?, ?)", (id, first, last))
 
@@ -198,6 +199,9 @@ class Database:
 
         return results
     
+    def search_weekly_report_table(self, search):
+        pass
+    
     def calculate_time_delta(self, id: int, dateToCalulate: str) -> float:
 
         data = self.query_table("CheckInTable")
@@ -242,11 +246,12 @@ class Database:
         # Get the column names
         column_names = [description[0] for description in cursor.description]
 
-        # Write data to CSV file, overwriting old data
+        # Write data to CSV file, 
         with open(output_file, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow([i[0] for i in cursor.description])  # Write column names    #csv_writer.writerow(column_names)
-            csv_writer.writerows(data)
+            csv_writer.writerow(column_names[1:])
+            for row in data:
+                csv_writer.writerow(row[1:])
 
         # Close the database connection
         conn.close()
