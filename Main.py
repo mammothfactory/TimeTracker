@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 __authors__    = ["Blaze Sanders"]
- __contact__    = "blazes@mfc.us"
+ __contact__   = "blazes@mfc.us"
 __copyright__  = "Copyright 2023"
 __license__    = "MIT License"
 __status__     = "Development
@@ -16,32 +16,33 @@ __doc__        = "Generate a Progressive Web App GUI to log employee check-in an
 # pylint: disable=global-statement
 
 # Standard Python libraries
-import sys
-from datetime import datetime, time
-from time import sleep
-import re                                  # Regular expression 
+from datetime import datetime, time # Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
+import re                           # Regular Expression matching operations https://docs.python.org/3/library/re.html
 
 # Internally developed modules
 import GlobalConstants as GC              # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
 from Database import Database             # Store non-Personally Identifiable Information of employee ID's and timestamps
-from Email import Email
 
 # Browser base GUI framework to build and display a user interface mobile, PC, and Mac
 # https://nicegui.io/
 from nicegui import app, ui
 from nicegui.events import MouseEventArguments
 
-DEBUG_STATEMENTS_ON = True
-ELEVEN_PM = time(23, 0, 0)
+THREE_AM = time(3, 0, 0)
 clock = ui.html().classes("self-center")
 
 sanitizedID = ''
 validEmployeeID = ''
 
 def build_svg() -> str:
-    """Returns an SVG showing the current time.
+    """ Create an 800 x 800 pixel clock in HTML / SVG
+        https://de.m.wikipedia.org/wiki/Datei:Station_Clock.svg
+        
+    Args:
+        NONE
 
-        Original was borrowed from https://de.m.wikipedia.org/wiki/Datei:Station_Clock.svg.
+    Returns:
+        str: Valid HTML to create an analog clock
     """
     now = datetime.now()
     return f'''
@@ -76,57 +77,58 @@ def build_svg() -> str:
         </svg>
     '''
 
-def clock_in(sanitizedID: str):
+def clock_x(direction: int, sanitizedID: str):
     
     if invalidIdLabel.visible == False and len(sanitizedID) == GC.VALID_EMPLOYEE_ID_LENGTH:
-        clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
+        if direction == GC.CLOCK_IN:
+            clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
+            db.insert_check_in_table(sanitizedID)
+        elif direction == GC.CLOCK_OUT:
+            clockedOutLabel.set_text(f'{sanitizedID} - RELOJ DE SALIDA (CLOCK OUT)')
+            db.insert_check_out_table(sanitizedID)
+        
         clockedInLabel.visible = True
-        
-        db.insert_check_in_table(sanitizedID)
     else:
        tryAgainLabel.visible = True
     
-    inputBox.set_value('')
-    
-def clock_out(sanitizedID: str):
+    inputBox.set_value('')                          # Clear user input box after          
+                         
 
-    if invalidIdLabel.visible == False and len(sanitizedID) == GC.VALID_EMPLOYEE_ID_LENGTH:
-        clockedOutLabel.set_text(f'{id} - RELOJ DE SALIDA (CLOCK OUT)')
-        clockedOutLabel.visible = True
-        
-        db.insert_check_out_table(sanitizedID)
-    else:
-       tryAgainLabel.visible = True
-    
-    inputBox.set_value('')
-
-
-def sanitize_employee_id(text: str) -> str:
-    """ Converts all user bad input to valid ouput and updates UI label visible to control datatbase writes
+def sanitize_employee_id(inputText: str) -> str:
+    """ Convert all bad user input to valid ouput and update GUI label visibility to control datatbase writes
 
     Args:
-        text (str): Raw user input from input text box
+        inputText (str): Raw user input with possible errors
 
     Returns:
         str: A string with all blank spaces and non-digit characters removed
     """
     global sanitizedID
 
-    sanitizedID = text.replace(" ", "")
-    sanitizedID = re.sub(r'\D', '', sanitizedID)  # Remove non-digit characters
-    
-    if text != sanitizedID:
+    if int(inputText) > 9999 or int(inputText) < 0:
         invalidIdLabel.visible = True
         return 'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)'
     else:
        invalidIdLabel.visible = False
 
+    sanitizedID = str(int(inputText))
+    
     return sanitizedID
 
+
 def generate_report(db):
-    dateObj = datetime.now().time()
-    if  dateObj > ELEVEN_PM:
-        db.insert_weekly_report_table(dateObj)
+    """ Generate EXCEL document every monday at 3 am
+        Work week starts Sunday at 12:01 am and repeats every 7 days
+        Work week ends Saturday at 11:59 pm and repeats every 7 days
+
+    Args:
+        db (sqlite): *.db database file containing a table called "WeeklyReportTable"
+    """
+    dateObj = datetime.now()
+    dayOfWeek = dateObj.weekday()
+    #if DEBUGGING: dayOfWeek = GC.MONDAY
+
+    if dayOfWeek == GC.MONDAY and dateObj > THREE_AM:
         db.export_table_to_csv("WeeklyReportTable")
 
 
@@ -142,19 +144,20 @@ if __name__ in {"__main__", "__mp_main__"}:
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
     
-    inputBox = ui.input(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', \
+    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', \
+                        format='%i', \
                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
-                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: len(sanitizedID) <= GC.VALID_EMPLOYEE_ID_LENGTH})
+                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: len(sanitizedID) <= GC.VALID_EMPLOYEE_ID_LENGTH+1})
     
-    inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;")
+    inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
 
     # Invisible character https://invisibletext.com/#google_vignette
     with ui.row().classes("self-center"):
-        with ui.button(on_click=lambda e: clock_in(sanitizedID), color="green").classes("relative  h-32 w-96"):
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-96"):
             ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
             ui.icon('login')
         
-        with ui.button(on_click=lambda e: clock_out(sanitizedID), color="red").classes("relative  h-32 w-96"):
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-96"):
             ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
             ui.icon('logout')
     
