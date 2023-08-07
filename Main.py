@@ -20,7 +20,6 @@ from datetime import datetime, time # Manipulate calendar dates & time objects h
 import re                           # Regular Expression matching operations https://docs.python.org/3/library/re.html
 
 # Internally developed modules
-from PageKiteAPI import *                           # Create & delete custom subdomains for reverse proxy to tunnel
 import GlobalConstants as GC              # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
 from Database import Database             # Store non-Personally Identifiable Information of employee ID's and timestamps
 
