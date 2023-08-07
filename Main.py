@@ -20,6 +20,7 @@ from datetime import datetime, time # Manipulate calendar dates & time objects h
 import re                           # Regular Expression matching operations https://docs.python.org/3/library/re.html
 
 # Internally developed modules
+from PageKiteAPI import *                           # Create & delete custom subdomains for reverse proxy to tunnel
 import GlobalConstants as GC              # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
 from Database import Database             # Store non-Personally Identifiable Information of employee ID's and timestamps
 
@@ -28,7 +29,12 @@ from Database import Database             # Store non-Personally Identifiable In
 from nicegui import app, ui
 from nicegui.events import MouseEventArguments
 
+# Load environment variables for usernames, passwords, & API keys
+# https://pypi.org/project/python-dotenv/
+from dotenv import dotenv_values
+
 THREE_AM = time(3, 0, 0)
+ELEVEN_PM = time(23, 0, 0)
 clock = ui.html().classes("self-center")
 
 sanitizedID = ''
@@ -78,6 +84,12 @@ def build_svg() -> str:
     '''
 
 def clock_x(direction: int, sanitizedID: str):
+    """ Perform database insert 
+
+    Args:
+        direction (CONSTANT int):Define function as clock IN or clock OUT method
+        sanitizedID (str): Global sanitized number entered into Number text  box
+    """
     
     if invalidIdLabel.visible == False and len(sanitizedID) == GC.VALID_EMPLOYEE_ID_LENGTH:
         if direction == GC.CLOCK_IN:
@@ -91,7 +103,7 @@ def clock_x(direction: int, sanitizedID: str):
     else:
        tryAgainLabel.visible = True
     
-    inputBox.set_value('')                          # Clear user input box after          
+    inputBox.set_value(None)                          # Clear user input box after set_value('') doesn't work :)  
                          
 
 def sanitize_employee_id(inputText: str) -> str:
@@ -110,9 +122,12 @@ def sanitize_employee_id(inputText: str) -> str:
         return 'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)'
     else:
        invalidIdLabel.visible = False
-
-    sanitizedID = str(int(inputText))
     
+    if inputText == '0':
+        sanitizedID = ''
+    else:
+        sanitizedID = str(int(inputText))
+
     return sanitizedID
 
 
@@ -120,21 +135,30 @@ def generate_report(db):
     """ Generate EXCEL document every monday at 3 am
         Work week starts Sunday at 12:01 am and repeats every 7 days
         Work week ends Saturday at 11:59 pm and repeats every 7 days
+        Assumes 12 hour work day at 11 pm if an employee only clocks IN but forgets to clock out
+        Back calculates 12 hour work day using the time an employee clocks OUT if no clocking IN exists
 
     Args:
         db (sqlite): *.db database file containing a table called "WeeklyReportTable"
     """
-    dateObj = datetime.now()
-    dayOfWeek = dateObj.weekday()
+    currentDateObj = datetime.now()
+    dayOfWeek = currentDateObj.weekday()
+    currentTime = currentDateObj.time()
     #if DEBUGGING: dayOfWeek = GC.MONDAY
 
-    if dayOfWeek == GC.MONDAY and dateObj > THREE_AM:
+    if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
         db.export_table_to_csv("WeeklyReportTable")
 
 
 if __name__ in {"__main__", "__mp_main__"}:
-    db = Database()
     
+    # https://computingforgeeks.com/how-to-install-python-latest-debian/
+    
+    config = dotenv_values()
+    
+    db = Database()
+    #command = ['python3', 'pagekite.py', f'{GC.LOCAL_HOST_PORT_FOR_GUI}', 'timetracker.pagekite.me']
+
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
@@ -144,10 +168,11 @@ if __name__ in {"__main__", "__mp_main__"}:
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
     
-    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', \
+    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
                         format='%i', \
+                        step='1000', \
                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
-                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: len(sanitizedID) <= GC.VALID_EMPLOYEE_ID_LENGTH+1})
+                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
     
     inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
 
@@ -165,5 +190,5 @@ if __name__ in {"__main__", "__mp_main__"}:
     clockedOutLabel = ui.label(f'{validEmployeeID} - FINALIZADO (CLOCKED OUT)').style("color: red; font-size: 400%; font-weight: 300").classes("self-center")    
     tryAgainLabel = ui.label('INTENTAR OTRA VEZ (TRY AGAIN)').style("color: red; font-size: 400%; font-weight: 300").classes("self-center")
     
-    ui.run()
+    ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)
     

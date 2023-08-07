@@ -46,6 +46,45 @@ class Database:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS DebugLoggingTable (id INTEGER PRIMARY KEY, logMessage TEXT)''')
         
         self.conn.commit()
+        
+        self.insert_users_table("1001", "Blaze", "S")
+        self.insert_users_table("1002", "Blair", "G")
+        self.insert_users_table("1003", "Brandy", "K")
+        self.insert_users_table("1005", "J", "R")
+        
+        self.insert_users_table("9001", "User", "1")  
+        self.insert_users_table("9002", "User", "1")
+        self.insert_users_table("9003", "User", "1") 
+        self.insert_users_table("9004", "User", "1") 
+        self.insert_users_table("9005", "User", "1") 
+        self.insert_users_table("9006", "User", "1") 
+        self.insert_users_table("9007", "User", "1") 
+        self.insert_users_table("9008", "User", "1") 
+        self.insert_users_table("9009", "User", "1") 
+        self.insert_users_table("9010", "User", "1") 
+        
+        self.insert_users_table("9011", "User", "1")  
+        self.insert_users_table("9012", "User", "1")
+        self.insert_users_table("9013", "User", "1") 
+        self.insert_users_table("9014", "User", "1") 
+        self.insert_users_table("9015", "User", "1") 
+        self.insert_users_table("9016", "User", "1") 
+        self.insert_users_table("9017", "User", "1") 
+        self.insert_users_table("9018", "User", "1") 
+        self.insert_users_table("9019", "User", "1") 
+        self.insert_users_table("9020", "User", "1")
+    
+        self.insert_users_table("9021", "User", "1")  
+        self.insert_users_table("9022", "User", "1")
+        self.insert_users_table("9023", "User", "1") 
+        self.insert_users_table("9024", "User", "1") 
+        self.insert_users_table("9025", "User", "1") 
+        self.insert_users_table("9026", "User", "1") 
+        self.insert_users_table("9027", "User", "1") 
+        self.insert_users_table("9028", "User", "1") 
+        self.insert_users_table("9029", "User", "1") 
+        self.insert_users_table("9030", "User", "1")  
+        
 
 
     def commit_changes(self):
@@ -200,6 +239,15 @@ class Database:
         return results
     
     def insert_weekly_report_table(self, id: int, dateToCalulate: datetime):
+        """ Build a table using the following rules:
+            Default to 12 hours if employee forgets to clock OUT - But also flag that this occured
+            Default to 0 hours if employee forgets to clock IN, but also allow for clock out with TODO start time  
+        
+
+        Args:
+            id (int): _description_
+            dateToCalulate (datetime): _description_
+        """
         # data = self.query_table("WeeklyReportTable") 
         # self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER)''')
         # self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
@@ -215,7 +263,9 @@ class Database:
             if len(results) > 0:
                 idPrimaryKeyToUpdate = results[0][0]
                 
-                if dayOfWeek == GC.MONDAY:
+                if dayOfWeek == GC.SUNDAY: 
+                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day6 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                elif dayOfWeek == GC.MONDAY:
                     self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day0 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.TUESDAY:
                     self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day1 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
@@ -227,8 +277,7 @@ class Database:
                     self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day4 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.SATURDAY:
                     self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day5 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
-                elif dayOfWeek == GC.SUNDAY: 
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day6 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+               
                 
                 self.commit_changes()
             else:
