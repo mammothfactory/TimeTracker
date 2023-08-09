@@ -17,20 +17,18 @@ __doc__        = "Generate a Progressive Web App GUI to log employee check-in an
 
 # Standard Python libraries
 from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
-import re                           		# Regular Expression matching operations https://docs.python.org/3/library/re.html
-import pytz 					# World Timezone Definitions  https://pypi.org/project/pytz/
+import re                           		    # Regular Expression matching operations https://docs.python.org/3/library/re.html
+import pytz 					                # World Timezone Definitions  https://pypi.org/project/pytz/
 
 # Internally developed modules
-import GlobalConstants as GC              # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
-from Database import Database             # Store non-Personally Identifiable Information of employee ID's and timestamps
+import GlobalConstants as GC                    # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
+from Database import Database                   # Store non-Personally Identifiable Information of employee ID's and timestamps
 
-# Browser base GUI framework to build and display a user interface mobile, PC, and Mac
-# https://nicegui.io/
+# Browser base GUI framework to build and display a user interface mobile, PC, and Mac # https://nicegui.io/
 from nicegui import app, ui
 from nicegui.events import MouseEventArguments
 
-# Load environment variables for usernames, passwords, & API keys
-# https://pypi.org/project/python-dotenv/
+# Load environment variables for usernames, passwords, & API keys # https://pypi.org/project/python-dotenv/
 from dotenv import dotenv_values
 
 THREE_AM = time(3, 0, 0)
@@ -87,14 +85,11 @@ def build_svg() -> str:
             <g transform="rotate({117 + now.minute / 60 * 360} 400 400)">
                 <path d="m480.73 344.98 11.019 21.459-382.37 199.37-18.243-7.2122 4.768-19.029z"/>
             </g>
-            <g transform="rotate({169 + now.second / 60 * 360} 400 400)">
-                <path d="m410.21 301.98-43.314 242.68a41.963 41.963 0 0 0-2.8605-0.091 41.963 41.963 0 0 0-41.865 42.059 41.963 41.963 0 0 0 30.073 40.144l-18.417 103.18 1.9709 3.9629 3.2997-2.9496 21.156-102.65a41.963 41.963 0 0 0 3.9771 0.1799 41.963 41.963 0 0 0 41.865-42.059 41.963 41.963 0 0 0-29.003-39.815l49.762-241.44zm-42.448 265.56a19.336 19.336 0 0 1 15.703 18.948 19.336 19.336 0 0 1-19.291 19.38 19.336 19.336 0 0 1-19.38-19.291 19.336 19.336 0 0 1 19.291-19.38 19.336 19.336 0 0 1 3.6752 0.3426z" fill="#a40000"/>
-            </g>
         </svg>
     '''
 
 
-def clock_x(direction: int, sanitizedID: str):
+def clock_x(direction: int, sanitizedID: str, background):
     """ Perform database insert
 
     Args:
@@ -107,10 +102,13 @@ def clock_x(direction: int, sanitizedID: str):
             clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
             clockedInLabel.visible = True
             db.insert_check_in_table(sanitizedID)
+            background
+            background
         elif direction == GC.CLOCK_OUT:
             clockedOutLabel.set_text(f'{sanitizedID} - RELOJ DE SALIDA (CLOCK OUT)')
             clockedOutLabel.visible = True
             db.insert_check_out_table(sanitizedID)
+            background = ui.element('div').classes('p-5 bg-red-100 self-center')
 
     else:
        tryAgainLabel.visible = True
@@ -162,6 +160,10 @@ def generate_report(db):
         db.export_table_to_csv("WeeklyReportTable")
 
 
+def reset_background(background):
+    background = ui.element('div').classes('p-5 bg-white-100 self-center')
+
+
 if __name__ in {"__main__", "__mp_main__"}:
 
     # https://computingforgeeks.com/how-to-install-python-latest-debian/
@@ -169,34 +171,39 @@ if __name__ in {"__main__", "__mp_main__"}:
     config = dotenv_values()
 
     db = Database()
+    background = ui.element('div').classes('p-5 bg-white-100 self-center')
     #command = ['python3', 'pagekite.py', f'{GC.LOCAL_HOST_PORT_FOR_GUI}', 'timetracker.pagekite.me']
 
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
+    ui.timer(GC.LABEL_UPDATE_TIME, lambda: reset_background(background))
     ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: generate_report(db))
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
 
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
 
-    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
-                        format='%i', \
-                        step='1000', \
-                        on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
-                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
+    
+    with background:
+        inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
+                            format='%i', \
+                            step='1000', \
+                            on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
+                            validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
 
-    inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
+        inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
 
-    # Invisible character https://invisibletext.com/#google_vignette
-    with ui.row().classes("self-center"):
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-96"):
-            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
-            ui.icon('login')
+        
+        # Invisible character https://invisibletext.com/#google_vignette
+        with ui.row().classes("self-center"):
+            with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID, background), color="green").classes("relative  h-32 w-96"):
+                ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
+                ui.icon('login')
 
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-96"):
-            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
-            ui.icon('logout')
+            with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID, background), color="red").classes("relative  h-32 w-96"):
+                ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
+                ui.icon('logout')
 
     clockedInLabel = ui.label(f'{validEmployeeID} - REGISTRO EN (CLOCKED IN)').style("color: green; font-size: 390%; font-weight: 300").classes("self-center")
     clockedOutLabel = ui.label(f'{validEmployeeID} - FINALIZADO (CLOCKED OUT)').style("color: red; font-size: 390%; font-weight: 300").classes("self-center")
