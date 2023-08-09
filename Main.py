@@ -18,6 +18,7 @@ __doc__        = "Generate a Progressive Web App GUI to log employee check-in an
 # Standard Python libraries
 from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
 import re                           		# Regular Expression matching operations https://docs.python.org/3/library/re.html
+import pytz 					# World Timezone Definitions  https://pypi.org/project/pytz/
 
 # Internally developed modules
 import GlobalConstants as GC              # Global constants used across MainHouse.py, HouseDatabase.py, and PageKiteAPI.py
@@ -39,6 +40,7 @@ clock = ui.html().classes("self-center")
 sanitizedID = ''
 validEmployeeID = ''
 
+
 def build_svg() -> str:
     """ Create an 800 x 800 pixel clock in HTML / SVG
         https://de.m.wikipedia.org/wiki/Datei:Station_Clock.svg
@@ -49,7 +51,16 @@ def build_svg() -> str:
     Returns:
         str: Valid HTML to create an analog clock
     """
-    now = datetime.now() - timedelta(hours=5)
+    tz = pytz.timezone('America/Chicago')
+    now = datetime.now(tz)
+    if now.dst() == timedelta(0):
+        now = datetime.now() - timedelta(hours=6)
+        #print('Standard Time')
+
+    else:
+        now = datetime.now() - timedelta(hours=5)
+        #print('Daylight Savings')
+
     return f'''
         <svg width="800" height="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <circle cx="400" cy="400" r="200" fill="#fff"/>
@@ -81,6 +92,7 @@ def build_svg() -> str:
             </g>
         </svg>
     '''
+
 
 def clock_x(direction: int, sanitizedID: str):
     """ Perform database insert
@@ -123,7 +135,7 @@ def sanitize_employee_id(inputText: str) -> str:
     else:
        invalidIdLabel.visible = False
 
-    if inputText == '0':
+    if inputText == None:
         sanitizedID = ''
     else:
         sanitizedID = str(int(inputText))
