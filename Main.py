@@ -28,8 +28,6 @@ from Database import Database                   # Store non-Personally Identifia
 from nicegui import app, ui
 from nicegui.events import MouseEventArguments
 
-# Load environment variables for usernames, passwords, & API keys # https://pypi.org/project/python-dotenv/
-from dotenv import dotenv_values
 
 THREE_AM = time(3, 0, 0)
 ELEVEN_PM = time(23, 0, 0)
@@ -89,7 +87,7 @@ def build_svg() -> str:
     '''
 
 
-def clock_x(direction: int, sanitizedID: str, background):
+def clock_x(direction: int, sanitizedID: str):
     """ Perform database insert
 
     Args:
@@ -102,13 +100,10 @@ def clock_x(direction: int, sanitizedID: str, background):
             clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
             clockedInLabel.visible = True
             db.insert_check_in_table(sanitizedID)
-            background
-            background
         elif direction == GC.CLOCK_OUT:
             clockedOutLabel.set_text(f'{sanitizedID} - RELOJ DE SALIDA (CLOCK OUT)')
             clockedOutLabel.visible = True
             db.insert_check_out_table(sanitizedID)
-            background = ui.element('div').classes('p-5 bg-red-100 self-center')
 
     else:
        tryAgainLabel.visible = True
@@ -160,50 +155,39 @@ def generate_report(db):
         db.export_table_to_csv("WeeklyReportTable")
 
 
-def reset_background(background):
-    background = ui.element('div').classes('p-5 bg-white-100 self-center')
-
-
 if __name__ in {"__main__", "__mp_main__"}:
 
     # https://computingforgeeks.com/how-to-install-python-latest-debian/
 
-    config = dotenv_values()
-
     db = Database()
-    background = ui.element('div').classes('p-5 bg-white-100 self-center')
     #command = ['python3', 'pagekite.py', f'{GC.LOCAL_HOST_PORT_FOR_GUI}', 'timetracker.pagekite.me']
 
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
-    ui.timer(GC.LABEL_UPDATE_TIME, lambda: reset_background(background))
     ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: generate_report(db))
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
 
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
 
-    
-    with background:
-        inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
-                            format='%i', \
-                            step='1000', \
-                            on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
-                            validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
+    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
+                         format='%i', \
+                         step='1000', \
+                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
+                         validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
 
-        inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
+    inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
 
-        
-        # Invisible character https://invisibletext.com/#google_vignette
-        with ui.row().classes("self-center"):
-            with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID, background), color="green").classes("relative  h-32 w-96"):
-                ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
-                ui.icon('login')
+    # Invisible character https://invisibletext.com/#google_vignette
+    with ui.row().classes("self-center"):
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-96"):
+            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
+            ui.icon('login')
 
-            with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID, background), color="red").classes("relative  h-32 w-96"):
-                ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
-                ui.icon('logout')
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-96"):
+            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
+            ui.icon('logout')
 
     clockedInLabel = ui.label(f'{validEmployeeID} - REGISTRO EN (CLOCKED IN)').style("color: green; font-size: 390%; font-weight: 300").classes("self-center")
     clockedOutLabel = ui.label(f'{validEmployeeID} - FINALIZADO (CLOCKED OUT)').style("color: red; font-size: 390%; font-weight: 300").classes("self-center")
