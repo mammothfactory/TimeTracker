@@ -28,7 +28,6 @@ from Database import Database                   # Store non-Personally Identifia
 from nicegui import app, ui
 from nicegui.events import MouseEventArguments
 
-
 THREE_AM = time(3, 0, 0)
 ELEVEN_PM = time(23, 0, 0)
 clock = ui.html().classes("self-center")
@@ -87,7 +86,7 @@ def build_svg() -> str:
     '''
 
 
-def clock_x(direction: int, sanitizedID: str):
+async def clock_x(direction: int, sanitizedID: str):
     """ Perform database insert
 
     Args:
@@ -100,10 +99,15 @@ def clock_x(direction: int, sanitizedID: str):
             clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
             clockedInLabel.visible = True
             db.insert_check_in_table(sanitizedID)
+            set_background('grey')
+            await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
+        
         elif direction == GC.CLOCK_OUT:
             clockedOutLabel.set_text(f'{sanitizedID} - RELOJ DE SALIDA (CLOCK OUT)')
             clockedOutLabel.visible = True
             db.insert_check_out_table(sanitizedID)
+            set_background('grey')
+            await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
 
     else:
        tryAgainLabel.visible = True
@@ -154,31 +158,37 @@ def generate_report(db):
     if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
         db.export_table_to_csv("WeeklyReportTable")
 
+def set_background(color: str) -> None:
+    ui.query('body').style(f'background-color: {color}')
+    
+def sync():
+    # https://www.fosslinux.com/24391/how-to-sync-microsoft-onedrive-from-command-line-in-linux.htm
+    pass
 
 if __name__ in {"__main__", "__mp_main__"}:
-
-    # https://computingforgeeks.com/how-to-install-python-latest-debian/
-
     db = Database()
+
     #command = ['python3', 'pagekite.py', f'{GC.LOCAL_HOST_PORT_FOR_GUI}', 'timetracker.pagekite.me']
 
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
+    ui.timer(GC.LABEL_UPDATE_TIME, lambda: set_background('white'))
     ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: generate_report(db))
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
 
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
 
-    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value='', \
-                         format='%i', \
-                         step='1000', \
-                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
-                         validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
+    inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value=None, \
+                        format='%i', \
+                        step='1000', \
+                        on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
+                        validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
 
     inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
 
+    
     # Invisible character https://invisibletext.com/#google_vignette
     with ui.row().classes("self-center"):
         with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-96"):
@@ -194,4 +204,3 @@ if __name__ in {"__main__", "__mp_main__"}:
     tryAgainLabel = ui.label('INTENTAR OTRA VEZ (TRY AGAIN)').style("color: red; font-size: 400%; font-weight: 300").classes("self-center")
 
     ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)
-
