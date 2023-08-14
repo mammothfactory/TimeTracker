@@ -17,7 +17,6 @@ __doc__        = "Generate a Progressive Web App GUI to log employee check-in an
 
 # Standard Python libraries
 from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
-import re                           		    # Regular Expression matching operations https://docs.python.org/3/library/re.html
 import pytz 					                # World Timezone Definitions  https://pypi.org/project/pytz/
 
 # Internally developed modules
@@ -35,6 +34,20 @@ clock = ui.html().classes("self-center")
 sanitizedID = ''
 validEmployeeID = ''
 
+def getTime():
+    tz = pytz.timezone('America/Chicago')
+    zulu = pytz.timezone('UTC')
+    now = datetime.now(tz)
+    if now.dst() == timedelta(0):
+        now = datetime.now(zulu) - timedelta(hours=6)
+        #print('Standard Time')
+
+    else:
+        now = datetime.now(zulu) - timedelta(hours=5)
+        #print('Daylight Savings')   
+        
+    return now 
+
 
 def build_svg() -> str:
     """ Create an 800 x 800 pixel clock in HTML / SVG
@@ -46,16 +59,7 @@ def build_svg() -> str:
     Returns:
         str: Valid HTML to create an analog clock
     """
-    tz = pytz.timezone('America/Chicago')
-    now = datetime.now(tz)
-    if now.dst() == timedelta(0):
-        now = datetime.now() - timedelta(hours=6)
-        #print('Standard Time')
-
-    else:
-        now = datetime.now() - timedelta(hours=5)
-        #print('Daylight Savings')
-
+    now = getTime()
     return f'''
         <svg width="800" height="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <circle cx="400" cy="400" r="200" fill="#fff"/>
@@ -150,7 +154,7 @@ def generate_report(db):
     Args:
         db (sqlite): *.db database file containing a table called "WeeklyReportTable"
     """
-    currentDateObj = datetime.now()
+    currentDateObj = getTime()
     dayOfWeek = currentDateObj.weekday()
     currentTime = currentDateObj.time()
     #if DEBUGGING: dayOfWeek = GC.MONDAY
