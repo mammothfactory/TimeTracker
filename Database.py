@@ -16,14 +16,18 @@ __version__    = "0.1.0"
 
 # Standard Python libraries
 import sqlite3
-from datetime import datetime, timedelta
+
+from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
 from time import sleep
+import pytz 					                # World Timezone Definitions  https://pypi.org/project/pytz/
+
+import os
 import csv
 
 # Internal modules
 import GlobalConstants as GC
 
-DEBUGGING =True
+DEBUGGING = True
 
 class Database:
     """ Store non-Personally Identifiable Information in SQLite database
@@ -40,7 +44,7 @@ class Database:
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS UsersTable (id INTEGER PRIMARY KEY, employeeId INTEGER, firstName TEXT, lastName TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckInTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS CheckOutTable (id INTEGER PRIMARY KEY, employeeId INTEGER, timestamp TEXT)''')
-        self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER)''')
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, totalHours INTEGER, day6 INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, inComments TEXT, outComments TEXT)''')
         
         # Create debuging logg
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS DebugLoggingTable (id INTEGER PRIMARY KEY, logMessage TEXT)''')
@@ -99,6 +103,22 @@ class Database:
         self.conn.close()
 
 
+    def getDateTime(self):
+        tz = pytz.timezone('America/Chicago')
+        zulu = pytz.timezone('UTC')
+        now = datetime.now(tz)
+        if now.dst() == timedelta(0):
+            now = datetime.now(zulu) - timedelta(hours=6)
+            #print('Standard Time')
+
+        else:
+            now = datetime.now(zulu) - timedelta(hours=5)
+            #print('Daylight Savings')   
+            
+        return now 
+
+
+
     def query_table(self, tableName: str):
         """ Return every row of a table from a *.db database
 
@@ -147,7 +167,7 @@ class Database:
         if GC.DEBUG_STATEMENTS_ON:  print(f'EMPLOYEE ID FILTER: {result}')
 
         isoString = '?'
-        currentDateTime = datetime.now().isoformat(timespec="minutes")
+        currentDateTime = self.getDateTime().isoformat(timespec="minutes")
         
         try:
             isoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
@@ -158,7 +178,7 @@ class Database:
 
         finally:
             if len(result) > 0:
-                todayIsoString = datetime.now().isoformat(timespec="minutes")[0:10] 
+                todayIsoString = self.getDateTime().isoformat(timespec="minutes")[0:10] 
                 finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(todayIsoString), result))
                 if GC.DEBUG_STATEMENTS_ON: print(f'TIMESTAMP ID FILTER: {finalResult}')
     
@@ -174,7 +194,7 @@ class Database:
         self.commit_changes()
                     
 
-    def insert_check_out_table(self, id: int):
+    def insert_check_out_table(self, id: int) -> tuple:
         """ Insert date and time (to current mintue) into CheckOutTable of database
             https://en.wikipedia.org/wiki/ISO_8601
 
@@ -186,7 +206,7 @@ class Database:
         if GC.DEBUG_STATEMENTS_ON:  print(f'EMPLOYEE ID FILTER: {result}')
 
         isoString = '?'
-        currentDateTime = datetime.now().isoformat(timespec="minutes")
+        currentDateTime = self.getDateTime().isoformat(timespec="minutes")
         
         try:
             isoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
@@ -197,7 +217,7 @@ class Database:
 
         finally:
             if len(result) > 0:
-                todayIsoString = datetime.now().isoformat(timespec="minutes")[0:10] 
+                todayIsoString = self.getDateTime().isoformat(timespec="minutes")[0:10] 
                 finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(todayIsoString), result))
                 if GC.DEBUG_STATEMENTS_ON: print(f'TIMESTAMP ID FILTER: {finalResult}')
     
@@ -249,14 +269,23 @@ class Database:
             dateToCalulate (datetime): _description_
         """
         # data = self.query_table("WeeklyReportTable") 
-        # self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER)''')
+        # self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER, inComments TEXT, outComments TEXT)''')
         # self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
         # self.cursor.execute("UPDATE UsersTable SET employeeId = ?, firstName = ?, lastName = ? WHERE id = ?", (id, first, last, idPrimaryKeyToUpdate))
         
         try:
             # Get the day of the week (0=Monday, 1=Tuesday, ..., 6=Sunday)
             dayOfWeek = dateToCalulate.weekday()
-            #if DEBUGGING: dayOfWeek = GC.MONDAY
+            if Database.DEBUGGING: 
+                dayOfWeek = GC.MONDAY
+                currentTime = time(22, 45, 0)
+                #currentTime = time(23, 22, 0)
+                #currentTime = time(23, 59, 0)
+                #currentTime = time(24, 0, 0)
+                #currentTime = time(1, 2, 0)
+                #currentTime = time(2, 59, 0)
+                #currentTime = time(3, 11, 0)
+            
             dailyHours = self.calculate_time_delta(id, dateToCalulate) 
             
             results = self.search_users_table(id)
@@ -322,29 +351,66 @@ class Database:
         return elaspedHours
     
     
-    def export_table_to_csv(self, table_name):
+    def export_table_to_csv(self, tableNames):
+        """ Creates a filename assuming that the date that this code runs is a Monday
+
+        Args:
+            table_name (_type_): _description_
+        """
         # Connect to the SQLite database
         conn = sqlite3.connect('TimeReport.db')
         cursor = conn.cursor()
 
-        # Fetch data from the table
-        cursor.execute(f"SELECT * FROM {table_name}")
-        data = cursor.fetchall()
+        for table in tableNames:
+            try:
+                # Fetch data from the table
+                cursor.execute(f"SELECT * FROM {table}")
+                data = cursor.fetchall()
+            
+            except sqlite3.OperationalError:
+                pass #db.insert_debug_logging_table(f'No table named {table} when converting table to CSV in Database.export_table_to_csv() function')
 
-        # Get the column names
-        column_names = [description[0] for description in cursor.description]
+            finally:   
+                # Create a .csv filename base on (Monday - 8 days) to (Monday - 2 days) to create for example 2023-08-01_2023-08-07_LaborerTimeReport
+                lastSunday = (self.getDateTime() - timedelta(days=8)).isoformat(timespec="minutes")[0:10]
+                lastSaturday = (self.getDateTime() - timedelta(days=2)).isoformat(timespec="minutes")[0:10]
+                
+                currentDirectory = os.getcwd()
+                nextDirectory = os.path.join(currentDirectory, 'TimeCardReports')
+                if not os.path.exists(nextDirectory):
+                    os.makedirs(nextDirectory)
+                
+                if table == "WeeklyReportTable":
+                    columnNames = ["Full Name", "Employee ID", "Total Hours", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Check In Comments", "Check Out Comments"]
+                    outputFilename = lastSunday + "_" + lastSaturday  + "_LaborerTimeReport.csv"  
+                    filePath = os.path.join(nextDirectory, outputFilename)
+                    
+                
+                elif table == "CheckInTable":
+                    columnNames = ["Full Name", "Employee ID", "Clock IN Timestamp"]
+                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockInTimes.csv"
+                    filePath = os.path.join(nextDirectory, outputFilename)
 
-        # Write data to CSV file
-        if table_name == "WeeklyReportTable":
-            output_file = datetime.now().isoformat(timespec="minutes")[0:10] + "_LaborerTimeReport.csv"  #TODO: 2023-08-01_2023-08-07_LaborerTimeReport
-        with open(output_file, 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(column_names[1:])
-            for row in data:
-                csv_writer.writerow(row[1:])
+                        
+                elif table == "CheckOutTable":
+                    columnNames = ["Full Name", "Employee ID", "Clock OUT Timestamp"]
+                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockOutTimes.csv" 
+                    filePath = os.path.join(nextDirectory, outputFilename)
+                
+                else:
+                    print(f'Table Name {table} conversion not implemented')
+                 
+                    with open(filePath, 'w', newline='') as csvfile:
+                        csv_writer = csv.writer(csvfile)
+                        csv_writer.writerow(columnNames[0:12])
+                        for row in data:
+                            csv_writer.writerow(row[1:])
+                            
+                    csvfile.close()
 
         # Close the database connection
         conn.close()
+        
         
 
     def is_date_between(startDatetimeObj, endDatetimeObj, dateToCheck) -> bool:
@@ -354,21 +420,18 @@ if __name__ == "__main__":
     print("Testing Database.py")
 
     db = Database()
-        
-    db.insert_users_table("1001", "Blaze", "S")
-    db.insert_users_table("1002", "Blair", "G")
-    db.insert_users_table("9001", "User", "1")  
-    db.insert_users_table("9025", "User", "1")
-    csvFilename = datetime.now().isoformat(timespec="minutes")[0:10] + "_TimeReport.csv"
-    db.export_table_to_csv("UsersTable", csvFilename)
+
+    db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
     
     
     checkInErrors = db.insert_check_in_table(1001)
     print(checkInErrors)
-    sleep(60)
+    sleep(3)
     checkOutErrors = db.insert_check_out_table(1001)
     print(checkOutErrors)
-    print(f'Hours = {db.calculate_time_delta(1001, "2023-08-02"):.4f}')
+    
+    today = db.getDateTime().isoformat(timespec="minutes")[0:10]
+    print(f'Hours = {db.calculate_time_delta(1001, today):.4f}')
     
     
     
