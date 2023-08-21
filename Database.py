@@ -27,9 +27,10 @@ import csv
 # Internal modules
 import GlobalConstants as GC
 
-DEBUGGING = True
-
 class Database:
+    
+    DEBUGGING = True
+    
     """ Store non-Personally Identifiable Information in SQLite database
     """
 
@@ -49,48 +50,43 @@ class Database:
         # Create debuging logg
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS DebugLoggingTable (id INTEGER PRIMARY KEY, logMessage TEXT)''')
         
+        # Commit the five tables to database
         self.conn.commit()
         
-        self.insert_users_table("1001", "Blaze", "S")
-        self.insert_users_table("1002", "Blair", "G")
-        self.insert_users_table("1003", "Brandy", "K")
-        self.insert_users_table("1005", "J", "R")
-        
-        self.insert_users_table("9001", "User", "1")  
-        self.insert_users_table("9002", "User", "1")
-        self.insert_users_table("9003", "User", "1") 
-        self.insert_users_table("9004", "User", "1") 
-        self.insert_users_table("9005", "User", "1") 
-        self.insert_users_table("9006", "User", "1") 
-        self.insert_users_table("9007", "User", "1") 
-        self.insert_users_table("9008", "User", "1") 
-        self.insert_users_table("9009", "User", "1") 
-        self.insert_users_table("9010", "User", "1") 
-        
-        self.insert_users_table("9011", "User", "1")  
-        self.insert_users_table("9012", "User", "1")
-        self.insert_users_table("9013", "User", "1") 
-        self.insert_users_table("9014", "User", "1") 
-        self.insert_users_table("9015", "User", "1") 
-        self.insert_users_table("9016", "User", "1") 
-        self.insert_users_table("9017", "User", "1") 
-        self.insert_users_table("9018", "User", "1") 
-        self.insert_users_table("9019", "User", "1") 
-        self.insert_users_table("9020", "User", "1")
     
-        self.insert_users_table("9021", "User", "1")  
-        self.insert_users_table("9022", "User", "1")
-        self.insert_users_table("9023", "User", "1") 
-        self.insert_users_table("9024", "User", "1") 
-        self.insert_users_table("9025", "User", "1") 
-        self.insert_users_table("9026", "User", "1") 
-        self.insert_users_table("9027", "User", "1") 
-        self.insert_users_table("9028", "User", "1") 
-        self.insert_users_table("9029", "User", "1") 
-        self.insert_users_table("9030", "User", "1")  
+    def setup_users(self):
+        """ Define initial users for 
+        """
+        self.insert_users_table("1000", "Erick",    "Maldonado")
+        self.insert_users_table("1001", "Dago",     "Reyes Astello")
+        self.insert_users_table("1002", "Cesar",    "Rene Cabrera")
+        self.insert_users_table("1003", "Adrian",   "Cardenas")
+        self.insert_users_table("1004", "Miguel",   "Lopez Perez") 
+        self.insert_users_table("1005", "Edgar",    "Maldonado") 
+        self.insert_users_table("1006", "German",   "Maranto") 
+        self.insert_users_table("1007", "Juan ",    "Antonio") 
+        self.insert_users_table("1008", "Victor",   "Mata") 
+        self.insert_users_table("1009", "Eric ",    "Mata Vazquez") 
+        self.insert_users_table("1010", "David",    "Montoya") 
+
+        self.insert_users_table("1011", "Omar",     "Palomo Galvan")  
+        self.insert_users_table("1012", "Nicolas",  "Gomez Perez")
+        self.insert_users_table("1013", "Felipe",   "Otero") 
+        self.insert_users_table("1014", "Ulises",   "Rodriguez") 
+        self.insert_users_table("1015", "Fidencio", "Santiz Lopez") 
+        self.insert_users_table("1016", "Nicolas",  "Perez Santiz") 
+        self.insert_users_table("1017", "Rigoberto","Savedra") 
+        self.insert_users_table("1018", "Jorge",    "Velazquez") 
+        self.insert_users_table("1019", "Oscar",    "Cruz Zaleta") 
+        self.insert_users_table("1020", "Oscar",    "Rodriguez")
+
+        self.insert_users_table("1021", "Osiel",    "Hernandez")  
+        self.insert_users_table("1022", "Elias",    "Castaneda")
+        self.insert_users_table("1023", "Thomas",   "Humphrey") 
+        self.insert_users_table("1024", "Chase",    "Soliz") 
+        self.insert_users_table("1025", "Derrick",  "Lohner") 
         
-
-
+        
     def commit_changes(self):
         """ Commit data inserted into a table to the *.db database file 
         """
@@ -103,7 +99,12 @@ class Database:
         self.conn.close()
 
 
-    def getDateTime(self):
+    def get_date_time(self) -> datetime:
+        """ Get date and time in Marianna, FL timezone, independent of location on server running code
+
+        Returns:
+            Datetime: 
+        """
         tz = pytz.timezone('America/Chicago')
         zulu = pytz.timezone('UTC')
         now = datetime.now(tz)
@@ -116,7 +117,6 @@ class Database:
             #print('Daylight Savings')   
             
         return now 
-
 
 
     def query_table(self, tableName: str):
@@ -167,31 +167,22 @@ class Database:
         if GC.DEBUG_STATEMENTS_ON:  print(f'EMPLOYEE ID FILTER: {result}')
 
         isoString = '?'
-        currentDateTime = self.getDateTime().isoformat(timespec="minutes")
+        currentDateTime = self.get_date_time().isoformat(timespec="minutes")
         
         try:
-            isoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
+            storedIsoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
+            if GC.DEBUG_STATEMENTS_ON:  print(f'ISO DateTime: {storedIsoString}')
+        
         except IndexError:
-            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has never clocked in before')
+            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked in TODAY')
             self.cursor.execute("INSERT INTO CheckInTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
-
+            self.commit_changes()
 
         finally:
-            if len(result) > 0:
-                todayIsoString = self.getDateTime().isoformat(timespec="minutes")[0:10] 
-                finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(todayIsoString), result))
-                if GC.DEBUG_STATEMENTS_ON: print(f'TIMESTAMP ID FILTER: {finalResult}')
-    
-                if len(finalResult) > 0:
-                    nameResults = self.search_users_table(str(id))
-                    englishError = f'{nameResults[0][2]} {nameResults[0][3]} you already clocked in today'
-                    spanishError = f'{nameResults[0][2]} {nameResults[0][3]} ya has fichado hoy'
-                    return englishError, spanishError
-                else:
-                    if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {finalResult} since employee didnt clock in today')
-                    self.cursor.execute("INSERT INTO CheckInTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
-                    
-        self.commit_changes()
+            nameResults = self.search_users_table(str(id))
+            englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} you already clocked in today'
+            spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} ya has fichado hoy'
+            return englishError, spanishError
                     
 
     def insert_check_out_table(self, id: int) -> tuple:
@@ -206,32 +197,23 @@ class Database:
         if GC.DEBUG_STATEMENTS_ON:  print(f'EMPLOYEE ID FILTER: {result}')
 
         isoString = '?'
-        currentDateTime = self.getDateTime().isoformat(timespec="minutes")
+        currentDateTime = self.get_date_time().isoformat(timespec="minutes")
         
         try:
-            isoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
+            storedIsoString = result[0][GC.TIMESTAMP_COLUMN_NUMBER]
+            if GC.DEBUG_STATEMENTS_ON:  print(f'ISO DateTime: {storedIsoString}')
+            
         except IndexError:
-            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has never clocked out before')
+            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked in TODAY')
             self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
-
+            self.commit_changes()
 
         finally:
-            if len(result) > 0:
-                todayIsoString = self.getDateTime().isoformat(timespec="minutes")[0:10] 
-                finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(todayIsoString), result))
-                if GC.DEBUG_STATEMENTS_ON: print(f'TIMESTAMP ID FILTER: {finalResult}')
-    
-                if len(finalResult) > 0:
-                    nameResults = self.search_users_table(str(id))
-                    englishError = f'{nameResults[0][2]} {nameResults[0][3]} you already clocked out today'
-                    spanishError = f'{nameResults[0][2]} {nameResults[0][3]} ya saliste hoy'
-                    return englishError, spanishError
-                else:
-                    if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {finalResult} since employee didnt clock out today')
-                    self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
-      
-        self.commit_changes()
-
+            nameResults = self.search_users_table(str(id))
+            englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  you already clocked out today'
+            spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  ya saliste hoy'
+            return englishError, spanishError
+                
 
     def insert_debug_logging_table(self, debugText: str):
         """ 
@@ -243,7 +225,6 @@ class Database:
         self.commit_changes()
         
 
-
     def search_users_table(self, searchTerm: str):
         """ Search UsersTable table for every occurrence of a string
 
@@ -253,11 +234,12 @@ class Database:
         Returns:
             List: Of Tuples from a UsersTable, where each List item is a row in the table containing the exact search term
         """
-        self.cursor.execute("SELECT * FROM UsersTable WHERE employeeId LIKE ?", ('%' + searchTerm + '%',))
+        self.cursor.execute("SELECT * FROM UsersTable WHERE employeeId LIKE ?", ('%' + str(searchTerm) + '%',))
         results = self.cursor.fetchall()
 
         return results
-    
+
+
     def insert_weekly_report_table(self, id: int, dateToCalulate: datetime):
         """ Build a table using the following rules:
             Default to 12 hours if employee forgets to clock OUT - But also flag that this occured
@@ -319,10 +301,20 @@ class Database:
             print("INVALID USER ID")
 
     
-    def calculate_time_delta(self, id: int, dateToCalulate: str) -> float:
+    def calculate_time_delta(self, id: int, date: datetime) -> float:
+        """_summary_
+
+        Args:
+            id (int): _description_
+            dateToCalulate (str): _description_
+
+        Returns:
+            float: Decimals hours between check in and check out time for a specific employee ID on a specific date
+        """
 
         data = self.query_table("CheckInTable")
         result = list(filter(lambda t: t[GC.EMPLOYEE_ID_COLUMN_NUMBER] == id, data))
+        dateToCalulate = date.isoformat(timespec="minutes")[0:10]
         finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(dateToCalulate), result))
         try:
             checkInIsoString = finalResult[0][GC.TIMESTAMP_COLUMN_NUMBER]
@@ -351,29 +343,24 @@ class Database:
         return elaspedHours
     
     
-    def export_table_to_csv(self, tableNames):
+    def export_table_to_csv(self, tableNames: list):
         """ Creates a filename assuming that the date that this code runs is a Monday
 
         Args:
-            table_name (_type_): _description_
+            tableNames (list): List of string table names in the database to convert
         """
-        # Connect to the SQLite database
-        conn = sqlite3.connect('TimeReport.db')
-        cursor = conn.cursor()
-
         for table in tableNames:
-            try:
-                # Fetch data from the table
-                cursor.execute(f"SELECT * FROM {table}")
-                data = cursor.fetchall()
-            
-            except sqlite3.OperationalError:
-                pass #db.insert_debug_logging_table(f'No table named {table} when converting table to CSV in Database.export_table_to_csv() function')
 
-            finally:   
+            # Fetch data from the table
+            data = self.query_table(table)
+            
+            if len(data) == 0:
+                self.insert_debug_logging_table(f'No table named {table} when converting table to CSV in Database.export_table_to_csv() function at {self.get_date_time()}')
+                
+            else:
                 # Create a .csv filename base on (Monday - 8 days) to (Monday - 2 days) to create for example 2023-08-01_2023-08-07_LaborerTimeReport
-                lastSunday = (self.getDateTime() - timedelta(days=8)).isoformat(timespec="minutes")[0:10]
-                lastSaturday = (self.getDateTime() - timedelta(days=2)).isoformat(timespec="minutes")[0:10]
+                lastSunday = (self.get_date_time() - timedelta(days=8)).isoformat(timespec="minutes")[0:10]
+                lastSaturday = (self.get_date_time() - timedelta(days=2)).isoformat(timespec="minutes")[0:10]
                 
                 currentDirectory = os.getcwd()
                 nextDirectory = os.path.join(currentDirectory, 'TimeCardReports')
@@ -385,21 +372,6 @@ class Database:
                     outputFilename = lastSunday + "_" + lastSaturday  + "_LaborerTimeReport.csv"  
                     filePath = os.path.join(nextDirectory, outputFilename)
                     
-                
-                elif table == "CheckInTable":
-                    columnNames = ["Full Name", "Employee ID", "Clock IN Timestamp"]
-                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockInTimes.csv"
-                    filePath = os.path.join(nextDirectory, outputFilename)
-
-                        
-                elif table == "CheckOutTable":
-                    columnNames = ["Full Name", "Employee ID", "Clock OUT Timestamp"]
-                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockOutTimes.csv" 
-                    filePath = os.path.join(nextDirectory, outputFilename)
-                
-                else:
-                    print(f'Table Name {table} conversion not implemented')
-                 
                     with open(filePath, 'w', newline='') as csvfile:
                         csv_writer = csv.writer(csvfile)
                         csv_writer.writerow(columnNames[0:12])
@@ -407,35 +379,70 @@ class Database:
                             csv_writer.writerow(row[1:])
                             
                     csvfile.close()
+                    
+                elif table == "CheckInTable":
+                    columnNames = ["Full Name", "Employee ID", "Clock IN Timestamp"]
+                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockInTimes.csv"
+                    filePath = os.path.join(nextDirectory, outputFilename)
 
-        # Close the database connection
-        conn.close()
-        
-        
-
+                    with open(filePath, 'w', newline='') as csvfile:
+                        csv_writer = csv.writer(csvfile)
+                        csv_writer.writerow(columnNames[0:4])
+                        for row in data:
+                            csv_writer.writerow(row[1:])
+                            
+                    csvfile.close()
+                        
+                elif table == "CheckOutTable":
+                    columnNames = ["Full Name", "Employee ID", "Clock OUT Timestamp"]
+                    outputFilename = lastSunday + "_" + lastSaturday  + "_ClockOutTimes.csv" 
+                    filePath = os.path.join(nextDirectory, outputFilename)
+                    
+                    with open(filePath, 'w', newline='') as csvfile:
+                        csv_writer = csv.writer(csvfile)
+                        csv_writer.writerow(columnNames[0:4])
+                        for row in data:
+                            csv_writer.writerow(row[1:])
+                            
+                    csvfile.close()
+                
+                else:
+                    print(f'Table Name {table} conversion not implemented')
+                 
     def is_date_between(startDatetimeObj, endDatetimeObj, dateToCheck) -> bool:
         return startDatetimeObj <= dateToCheck <= endDatetimeObj
 
 if __name__ == "__main__":
+    canUpdateweeklyReportTable = True   #TODO REMOVE AFTER Main.generate_report() and Main.update_weekly_report_table() is tested
     print("Testing Database.py")
 
     db = Database()
-
-    db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
-    
+    db.setup_users()    
     
     checkInErrors = db.insert_check_in_table(1001)
     print(checkInErrors)
-    sleep(3)
+    sleep(65)
     checkOutErrors = db.insert_check_out_table(1001)
     print(checkOutErrors)
     
-    today = db.getDateTime().isoformat(timespec="minutes")[0:10]
+    users = db.query_table("UsersTable")
+    for data in users:
+        employeeID = data[GC.EMPLOYEE_ID_COLUMN_NUMBER]
+        
+        currentDateObj = db.get_date_time()
+        dayOfWeek = currentDateObj.weekday()
+        currentTime = currentDateObj.time()
+        if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
+            canUpdateweeklyReportTable = False
+            
+        if canUpdateweeklyReportTable:
+            db.insert_weekly_report_table(employeeID, currentDateObj)
+
+    
+    db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
+    
+    today = db.get_date_time()
     print(f'Hours = {db.calculate_time_delta(1001, today):.4f}')
-    
-    
-    
-    #try expect ValueError: day is out of range for month
 
     databaseSearch = db.search_users_table("1001")
     if len(databaseSearch) > 0:
