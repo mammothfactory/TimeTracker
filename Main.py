@@ -32,6 +32,7 @@ clock = ui.html().classes("self-center")
 
 sanitizedID = ''
 validEmployeeID = ''
+canUpdateweeklyReportTable = True
 
 
 def build_svg() -> str:
@@ -44,7 +45,7 @@ def build_svg() -> str:
     Returns:
         str: Valid HTML to create an analog clock
     """
-    now = db.getDateTime()
+    now = db.get_date_time()
     return f'''
         <svg width="800" height="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
             <circle cx="400" cy="400" r="200" fill="#fff"/>
@@ -129,29 +130,53 @@ def sanitize_employee_id(inputText: str) -> str:
     return sanitizedID
 
 
-def generate_report(db):
+# TODO How do I make sure writes to insert_weekly_report_table doesnt get overwritten before report from last week is generated
+def update_weekly_report_table():
+    global canUpdateweeklyReportTable
+    
+    users = db.query_table("UsersTable")
+    for data in users:
+        employeeID = data[GC.EMPLOYEE_ID_COLUMN_NUMBER]
+        
+        currentDateObj = db.get_date_time()
+        dayOfWeek = currentDateObj.weekday()
+        currentTime = currentDateObj.time()
+        if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
+            canUpdateweeklyReportTable = False
+            
+        if canUpdateweeklyReportTable:
+            db.insert_weekly_report_table(employeeID, currentDateObj)
+
+
+def generate_report():
     """ Generate EXCEL document every monday at 3 am
         Work week starts Sunday at 12:01 am and repeats every 7 days
         Work week ends Saturday at 11:59 pm and repeats every 7 days
         Assumes 12 hour work day at 11 pm if an employee only clocks IN but forgets to clock out
         Back calculates 12 hour work day using the time an employee clocks OUT if no clocking IN exists
 
-    Args:
-        db (sqlite): *.db database file containing a table called "WeeklyReportTable"
+        db (sqlite): *.db database file
     """
-    currentDateObj = db.getDateTime()
+    currentDateObj = db.get_date_time()
     dayOfWeek = currentDateObj.weekday()
     currentTime = currentDateObj.time()
 
     if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
-        db.export_table_to_csv("WeeklyReportTable")
+        canUpdateweeklyReportTable = True
+        db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
+
 
 def set_background(color: str) -> None:
     ui.query('body').style(f'background-color: {color}')
-    
+ 
+   
 def sync():
-    # https://www.fosslinux.com/24391/how-to-sync-microsoft-onedrive-from-command-line-in-linux.htm
+    """ Force Syncthing systemd daemon restart
+        https://www.youtube.com/watch?v=g-FZCIF0HJw
+    """
+    #command = ['sudo', 'systemctl', 'restart', 'syncthing@root.service']
     pass
+
 
 if __name__ in {"__main__", "__mp_main__"}:
     db = Database()
@@ -162,7 +187,8 @@ if __name__ in {"__main__", "__mp_main__"}:
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedOutLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: tryAgainLabel.set_visibility(False))
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: set_background('white'))
-    ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: generate_report(db))
+    ui.timer(GC.DATABASE_DAILY_REPORT_UPDATE_TIME, lambda: update_weekly_report_table())
+    ui.timer(GC.DATABASE_WEEKLY_REPORT_UPDATE_TIME, lambda: generate_report())
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
 
     invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
