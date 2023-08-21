@@ -16,7 +16,7 @@ __version__    = "0.1.0"
 
 # Standard Python libraries
 import sqlite3
-
+	
 from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
 from time import sleep
 import pytz 					                # World Timezone Definitions  https://pypi.org/project/pytz/
@@ -174,7 +174,7 @@ class Database:
             if GC.DEBUG_STATEMENTS_ON:  print(f'ISO DateTime: {storedIsoString}')
         
         except IndexError:
-            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked in TODAY')
+            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked IN TODAY')
             self.cursor.execute("INSERT INTO CheckInTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
             self.commit_changes()
 
@@ -183,7 +183,7 @@ class Database:
             englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} you already clocked in today'
             spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} ya has fichado hoy'
             return englishError, spanishError
-                    
+
 
     def insert_check_out_table(self, id: int) -> tuple:
         """ Insert date and time (to current mintue) into CheckOutTable of database
@@ -204,7 +204,7 @@ class Database:
             if GC.DEBUG_STATEMENTS_ON:  print(f'ISO DateTime: {storedIsoString}')
             
         except IndexError:
-            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked in TODAY')
+            if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked OUT TODAY')
             self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
             self.commit_changes()
 
@@ -213,7 +213,7 @@ class Database:
             englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  you already clocked out today'
             spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  ya saliste hoy'
             return englishError, spanishError
-                
+
 
     def insert_debug_logging_table(self, debugText: str):
         """ 

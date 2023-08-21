@@ -180,7 +180,7 @@ def sync():
 
 if __name__ in {"__main__", "__mp_main__"}:
     db = Database()
-
+    db.setup_users()
     #command = ['python3', 'pagekite.py', f'{GC.LOCAL_HOST_PORT_FOR_GUI}', 'timetracker.pagekite.me']
 
     ui.timer(GC.LABEL_UPDATE_TIME, lambda: clockedInLabel.set_visibility(False))
