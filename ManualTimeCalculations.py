@@ -1,18 +1,13 @@
-# Standard Python libraries
-import sqlite3
+import sqlite3                              # https://docs.python.org/3/library/sqlite3.html
+from datetime import datetime, timedelta 	# Create calendar dates & time objects https://docs.python.org/3/library/datetime.html
 
+import schedule                             # Python functions periodicall https://schedule.readthedocs.io/en/stable/
+import threading                            # https://schedule.readthedocs.io/en/stable/background-execution.html
+from time import sleep                      # Import only the sleep function to pause prpgram execution 
+import pytz 					            # World Timezone Definitions  https://pypi.org/project/pytz/
 
-from datetime import datetime, time, timedelta 	# Manipulate calendar dates & time objects https://docs.python.org/3/library/datetime.html
-from time import sleep
-import pytz 					                # World Timezone Definitions  https://pypi.org/project/pytz/
-
-import os
 import csv
 
-import schedule
-import threading            # https://schedule.readthedocs.io/en/stable/background-execution.html
-
-# Internal modules
 import GlobalConstants as GC
 
 def get_date_time() -> datetime:
@@ -33,16 +28,20 @@ def get_date_time() -> datetime:
         #print('Daylight Savings')   
         
     return now 
-        
-def calculate_time_delta(id: int, date: datetime) -> float:
-        """_summary_
+
+
+def calculate_time_delta(id: int, date: datetime) -> tuple:
+        """ Calculate hours worked using clock in and clock out times from TimeReport.db SQLite database
 
         Args:
-            id (int): _description_
-            dateToCalulate (str): _description_
+            id (int): Employeed ID
+            date (datetime): Datetime object (e.g. "2023-08-27T05:26+00:00") 
 
         Returns:
-            float: Decimals hours between check in and check out time for a specific employee ID on a specific date
+            Tuple (elaspedHours, clockedIn, clockedOut):
+            elaspedHours = Decimals hours between check in and check out time for an employee ID on a specific date
+            clockedIn = True if an employee ID clocked IN using GUI, False otherwise
+            clockedOut = True if an employee ID clocked OUT using GUI, False otherwise
         """
         clockedIn = True
         clockedOut = True
@@ -96,7 +95,8 @@ def calculate_time_delta(id: int, date: datetime) -> float:
                 elaspedHours = elaspedSeconds / 3600.0
         
         return elaspedHours, clockedIn, clockedOut
-   
+
+
 def job():
     employeeIDs = [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025]
     
@@ -107,7 +107,7 @@ def job():
     filename = dates[0] + '_' + dates[6] + '_LaborerTimeReport.csv'
     with open(filename, 'a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Employee ID', 'Total Hours', 'Sundday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'CheckIn Comment', 'CheckOut Comment'])
+        writer.writerow(['Employee ID', 'Total Hours', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'CheckIn Comment', 'CheckOut Comment'])
         for id in employeeIDs:
             dailyHours = []
             dailyCheckedIn = []
@@ -137,16 +137,14 @@ def job():
             
             writer.writerow(data)
 
+
 def run_continuously(interval=2*GC.ONE_HOUR):
-    """Continuously run, while executing pending jobs at each
-    elapsed time interval.
-    @return cease_continuous_run: threading. Event which can
-    be set to cease continuous run. Please note that it is
-    *intended behavior that run_continuously() does not run
-    missed jobs*. For example, if you've registered a job that
-    should run every minute and you set a continuous run
-    interval of one hour then your job won't be run 60 times
-    at each interval but only once.
+    """ Continuously run, while executing pending jobs at each elapsed time interval.
+    
+        @return cease_continuous_run: threading. Event which can be set to cease continuous run. Please note that it is
+        intended behavior that run_continuously() does not run missed jobs*. For example, if you've registered a job that
+        should run every minute and you set a continuous run interval of one hour then your job won't be run 60 times
+        at each interval but only once.
     """
     cease_continuous_run = threading.Event()
 
@@ -155,16 +153,27 @@ def run_continuously(interval=2*GC.ONE_HOUR):
         def run(cls):
             while not cease_continuous_run.is_set():
                 schedule.run_pending()
-                time.sleep(interval)
+                sleep(interval)
 
     continuous_thread = ScheduleThread()
     continuous_thread.start()
     return cease_continuous_run
 
 
-
 if __name__ == "__main__":
-    schedule.every().sunday.at("02:00").do(job)
-    process = run_continuously()
-    while True:
-        pass
+
+    try:
+        #job()
+        
+        schedule.every().day.at("02:00").do(job)
+        ##schedule.every(10).sunday.at("02:00").do(job)
+        stopRun = run_continuously()
+        while True:
+            sleep(60)
+        
+    except KeyboardInterrupt:
+        stopRun.set()
+        
+        # Sleep so that only single 'Ctrl+C' is needed to exit program
+        sleep(3)                    
+        raise SystemExit
