@@ -1,0 +1,27 @@
+Employee ID,Total Hours,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,CheckIn Comment,CheckOut Comment
+1000,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1001,67.2,0.0,0.0,13.3333,13.2667,13.45,13.8167,13.3333,Missed: Sun Mon ,Missed: Sun Mon 
+1002,61.68,0.0,0.0,12.4,12.3833,12.4333,12.4667,12.0,Missed: Sun Mon ,Missed: Sun Mon Sat 
+1003,59.67,10.7,0.0,0.0,12.5,12.4667,12.0,12.0,Missed: Mon Tues ,Missed: Mon Tues Fri Sat 
+1004,49.3,0.0,0.0,12.4,12.45,12.45,12.0,0.0,Missed: Sun Mon Sat ,Missed: Sun Mon Fri Sat 
+1005,61.3,0.0,0.0,12.3833,12.4667,12.45,12.0,12.0,Missed: Sun Mon ,Missed: Sun Mon Fri Sat 
+1006,60.88,0.0,0.0,12.0,12.4,12.4833,12.0,12.0,Missed: Sun Mon ,Missed: Sun Mon Tues Fri Sat 
+1007,62.27,0.0,0.0,12.3667,12.4,12.4833,12.6333,12.3833,Missed: Sun Mon ,Missed: Sun Mon 
+1008,48.92,0.0,0.0,12.0,12.4333,12.4833,12.0,0.0,Missed: Sun Mon Sat ,Missed: Sun Mon Tues Fri Sat 
+1009,59.53,10.7167,0.0,0.0,12.3833,12.4333,12.0,12.0,Missed: Mon Tues ,Missed: Mon Tues Fri Sat 
+1010,62.73,0.0,0.0,12.6833,12.6167,12.4833,12.5,12.45,Missed: Sun Mon ,Missed: Sun Mon 
+1011,61.1,0.0,0.0,12.3667,12.4,12.4333,12.0,11.9,Missed: Sun Mon ,Missed: Sun Mon Fri 
+1012,24.0,0.0,0.0,0.0,0.0,0.0,12.0,12.0,Missed: Sun Mon Tues Wed Thurs ,Missed: Sun Mon Tues Wed Thurs Fri Sat 
+1013,62.27,0.0,0.0,12.35,12.4333,12.4833,12.6167,12.3833,Missed: Sun Mon ,Missed: Sun Mon 
+1014,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1015,62.83,0.0,0.0,12.3667,12.4333,12.4833,13.0833,12.4667,Missed: Sun Mon ,Missed: Sun Mon 
+1016,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1017,61.32,0.0,0.0,12.4333,11.85,12.5,12.0,12.5333,Missed: Sun Mon ,Missed: Sun Mon Fri 
+1018,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1019,61.23,0.0,0.0,12.4,12.4,12.4333,12.0,12.0,Missed: Sun Mon ,Missed: Sun Mon Fri Sat 
+1020,61.77,0.0,0.0,12.35,12.55,12.5,12.0,12.3667,Missed: Sun Mon ,Missed: Sun Mon Fri 
+1021,61.37,0.0,0.0,12.4167,12.4833,12.4667,12.0,12.0,Missed: Sun Mon Sat ,Missed: Sun Mon Fri 
+1022,61.57,0.0,0.0,12.3833,12.3833,12.4333,12.4667,11.9,Missed: Sun Mon ,Missed: Sun Mon 
+1023,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1024,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
+1025,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,Missed: All Days,Missed: All Days
