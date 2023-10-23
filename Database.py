@@ -27,6 +27,9 @@ import csv
 # Internal modules
 import GlobalConstants as GC
 
+ELEVEN_PM = time(23, 0, 0)
+THREE_AM  = time(3, 0, 0)
+
 class Database:
     
     DEBUGGING = True
@@ -85,7 +88,16 @@ class Database:
         self.insert_users_table("1023", "Thomas",   "Humphrey") 
         self.insert_users_table("1024", "Chase",    "Soliz") 
         self.insert_users_table("1025", "Derrick",  "Lohner") 
+    
+    def setup_weekly_report(self):
         
+        zero = 0
+        users = db.query_table("UsersTable")
+        
+        for data in users:
+            employeeID = data[GC.EMPLOYEE_ID_COLUMN_NUMBER]
+            name = data[GC.FIRST_NAME_COLUMN_NUMBER] + " " + data[GC.LAST_NAME_COLUMN_NUMBER]
+            self.cursor.execute("INSERT INTO WeeklyReportTable (fullname, employeeId, totalHours, day6, day0, day1, day2, day3, day4, day5, inComments, outComments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (name, employeeID, zero, zero, zero, zero, zero, zero, zero, zero, "Missed: ", "Missed:"))
         
     def commit_changes(self):
         """ Commit data inserted into a table to the *.db database file 
@@ -239,28 +251,22 @@ class Database:
 
         return results
 
-
-    def insert_weekly_report_table(self, id: int, dateToCalulate: datetime):
+    # NO CURRENTLY USED!!! See ManualTImeCalculations.py to see now .csv report are generated
+    def insert_weekly_report_table(self, id: int, date: datetime):
         """ Build a table using the following rules:
-            Default to 12 hours if employee forgets to clock OUT - But also flag that this occured
-            Default to 0 hours if employee forgets to clock IN, but also allow for clock out with TODO start time  
         
 
         Args:
-            id (int): _description_
+            id (int): Employee ID
             dateToCalulate (datetime): _description_
         """
-        # data = self.query_table("WeeklyReportTable") 
-        # self.cursor.execute('''CREATE TABLE IF NOT EXISTS WeeklyReportTable (id INTEGER PRIMARY KEY, fullname TEXT, employeeId INTEGER, day0 INTEGER, day1 INTEGER, day2 INTEGER, day3 INTEGER, day4 INTEGER, day5 INTEGER, day6 INTEGER, inComments TEXT, outComments TEXT)''')
-        # self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
-        # self.cursor.execute("UPDATE UsersTable SET employeeId = ?, firstName = ?, lastName = ? WHERE id = ?", (id, first, last, idPrimaryKeyToUpdate))
         
         try:
             # Get the day of the week (0=Monday, 1=Tuesday, ..., 6=Sunday)
-            dayOfWeek = dateToCalulate.weekday()
+            dayOfWeek = date.weekday()
             if Database.DEBUGGING: 
-                dayOfWeek = GC.MONDAY
-                currentTime = time(22, 45, 0)
+                dayOfWeek = GC.SUNDAY
+                #currentTime = time(22, 45, 0)
                 #currentTime = time(23, 22, 0)
                 #currentTime = time(23, 59, 0)
                 #currentTime = time(24, 0, 0)
@@ -268,78 +274,116 @@ class Database:
                 #currentTime = time(2, 59, 0)
                 #currentTime = time(3, 11, 0)
             
-            dailyHours = self.calculate_time_delta(id, dateToCalulate) 
+            dailyHours = self.calculate_time_delta(id, date) 
             
             results = self.search_users_table(id)
             if len(results) > 0:
                 idPrimaryKeyToUpdate = results[0][0]
                 
                 if dayOfWeek == GC.SUNDAY: 
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day6 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day6 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.MONDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day0 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day0 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.TUESDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day1 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day1 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.WEDNESDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day2 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day2 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.THURSDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day3 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day3 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.FRIDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day4 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day4 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
                 elif dayOfWeek == GC.SATURDAY:
-                    self.cursor.execute("UPDATE WeeklyReportTable SET employeeId = ?, day5 = ? WHERE id = ?", (id, dailyHours, idPrimaryKeyToUpdate))
-               
+                    self.cursor.execute("UPDATE WeeklyReportTable SET day5 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
+
+                data = self.query_table("WeeklyReportTable")
+                if data ==  None:
+                    pass
+                else:
+                    totalHours = sum(data[idPrimaryKeyToUpdate-1][GC.SUNDAY_COLUMN_NUMBERS:GC.SATURDAY_COLUMN_NUMBERS+1])
+                    xComments = data[idPrimaryKeyToUpdate-1][GC.IN_COMMENTS_COLUMN_NUMBERS:GC.OUT_COMMENTS_COLUMN_NUMBERS+1]
+                    self.cursor.execute("UPDATE WeeklyReportTable SET totalHours = ? WHERE id = ?", (round(totalHours, 2), idPrimaryKeyToUpdate))
+                    
+                    data = self.query_table("DebugLoggingTable")
+                    finalResult = [item for item in data if str(id) in item[1]]
+                    dateToCalulate = date.isoformat(timespec="minutes")[0:10]
+                    dayOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
                 
-                self.commit_changes()
+                if finalResult[0][GC.LOG_MESSAGE_COLUMN_NUMBER].endswith(dateToCalulate):
+                    newInText = xComments[0][0:] + " " + dayOfWeek[date.weekday()]
+                    newOutText = xComments[1][0:] + " " + dayOfWeek[date.weekday()]
+                    print(f'Found ID {id} with {dateToCalulate} date')
+                    
+                    self.cursor.execute("UPDATE WeeklyReportTable SET inComments = ? WHERE id = ?", (newInText, idPrimaryKeyToUpdate))
+                    self.cursor.execute("UPDATE WeeklyReportTable SET outComments = ? WHERE id = ?", (newOutText, idPrimaryKeyToUpdate))
+
             else:
-                print("INVALID USER ID")
+                print("INVALID USER ID ???")
                     
         except ValueError:
-            self.insert_debug_logging_table(f'Invalid date format when generating weekly report on {dateToCalulate}')
+            self.insert_debug_logging_table(f'Invalid date format when generating weekly report on {date}')
             
         except IndexError:
             print("INVALID USER ID")
+            
+        finally:
+            self.commit_changes()
 
     
     def calculate_time_delta(self, id: int, date: datetime) -> float:
-        """_summary_
+        """ Calculate hours an employee ID worked on a specific date
+
+            Default to 0 hours if employee forgets to both clock IN and clock OUT, otherwise default to 12 hours if employee only performs one on the actions  
 
         Args:
-            id (int): _description_
-            dateToCalulate (str): _description_
+            id (int): Employee ID
+            dateToCalulate (datetime): ISO-8601 date (e.g. "2023-08-22")
 
         Returns:
             float: Decimals hours between check in and check out time for a specific employee ID on a specific date
         """
-
+        clockedIn = True
+        clockedOut = True
+        
         data = self.query_table("CheckInTable")
         result = list(filter(lambda t: t[GC.EMPLOYEE_ID_COLUMN_NUMBER] == id, data))
         dateToCalulate = date.isoformat(timespec="minutes")[0:10]
         finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(dateToCalulate), result))
         try:
             checkInIsoString = finalResult[0][GC.TIMESTAMP_COLUMN_NUMBER]
-            self.insert_debug_logging_table(f'Employee ID #{id} never clocked in on {dateToCalulate}')
+            datetimeCheckInObject = datetime.fromisoformat(checkInIsoString)     # Convert the ISO strings to datetime objects
+            
         except IndexError:
-            return 0.0
+            self.insert_debug_logging_table(f'Employee ID #{id} never clocked in on {dateToCalulate}')
+            clockedIn = False
+            datetimeCheckInObject = None
 
         data = self.query_table("CheckOutTable")
         result = list(filter(lambda t: t[GC.EMPLOYEE_ID_COLUMN_NUMBER] == id, data))
         finalResult = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER].startswith(dateToCalulate), result))
         try:
             checkOutIsoString = finalResult[0][GC.TIMESTAMP_COLUMN_NUMBER]
-            self.insert_debug_logging_table(f'Employee ID #{id} never clocked out on {dateToCalulate}')
+            datetimeCheckOutObject = datetime.fromisoformat(checkOutIsoString)   # Convert the ISO strings to datetime objects
+            
         except IndexError:
-            return 0.0
+            self.insert_debug_logging_table(f'Employee ID #{id} never clocked out on {dateToCalulate}')
+            clockedOut = False
+            datetimeCheckOutObject = None
 
-        # Convert the ISO strings to datetime objects
-        datetimeCheckInObject = datetime.fromisoformat(checkInIsoString)
-        datetimeCheckOutObject = datetime.fromisoformat(checkOutIsoString)
+        elaspedHours = 0
+        if(not clockedIn and not clockedOut):
+            elaspedHours = 0.0
+        elif(clockedIn and not clockedOut):
+            elaspedHours = 12.0
+        elif(not clockedIn and not clockedOut):
+            elaspedHours = 12.0
+        else:              
+            if datetimeCheckInObject and datetimeCheckOutObject:
+                # Perform the absolute value subtraction (timeDeltaObject is NEVER negative)
+                timeDeltaObject = datetimeCheckOutObject - datetimeCheckInObject
+                elaspedSeconds = timeDeltaObject.seconds
+                elaspedHours = elaspedSeconds / 3600.0
 
-        # Perform the subtraction and convert to decimal hours rounded to two decimal points
-        timeDeltaObject = datetimeCheckOutObject - datetimeCheckInObject
-        elaspedSeconds = timeDeltaObject.seconds
-        elaspedHours = elaspedSeconds / 3600.0
-        
         return elaspedHours
     
     
@@ -417,29 +461,33 @@ if __name__ == "__main__":
     print("Testing Database.py")
 
     db = Database()
-    db.setup_users()    
     
+    """
+    db.setup_users()
+    db.setup_weekly_report()    
     checkInErrors = db.insert_check_in_table(1001)
     print(checkInErrors)
-    sleep(65)
+    #sleep(65)
     checkOutErrors = db.insert_check_out_table(1001)
     print(checkOutErrors)
+    """
     
     users = db.query_table("UsersTable")
     for data in users:
         employeeID = data[GC.EMPLOYEE_ID_COLUMN_NUMBER]
         
-        currentDateObj = db.get_date_time()
+        currentDateObj = datetime(2023, 8, 27, 5, 0, 0) #db.get_date_time()
         dayOfWeek = currentDateObj.weekday()
         currentTime = currentDateObj.time()
-        if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
+        if dayOfWeek == GC.SUNDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
             canUpdateweeklyReportTable = False
             
         if canUpdateweeklyReportTable:
+            #print(f'Updating weekly report for ID {employeeID} on {currentDateObj}')
             db.insert_weekly_report_table(employeeID, currentDateObj)
 
     
-    db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
+    #db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
     
     today = db.get_date_time()
     print(f'Hours = {db.calculate_time_delta(1001, today):.4f}')
