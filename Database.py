@@ -251,7 +251,7 @@ class Database:
 
         return results
 
-
+    # NO CURRENTLY USED!!! See ManualTImeCalculations.py to see now .csv report are generated
     def insert_weekly_report_table(self, id: int, date: datetime):
         """ Build a table using the following rules:
         
@@ -265,8 +265,8 @@ class Database:
             # Get the day of the week (0=Monday, 1=Tuesday, ..., 6=Sunday)
             dayOfWeek = date.weekday()
             if Database.DEBUGGING: 
-                #dayOfWeek = GC.TUESDAY
-                currentTime = time(22, 45, 0)
+                dayOfWeek = GC.SUNDAY
+                #currentTime = time(22, 45, 0)
                 #currentTime = time(23, 22, 0)
                 #currentTime = time(23, 59, 0)
                 #currentTime = time(24, 0, 0)
@@ -296,14 +296,18 @@ class Database:
                     self.cursor.execute("UPDATE WeeklyReportTable SET day5 = ? WHERE id = ?", (dailyHours, idPrimaryKeyToUpdate))
 
                 data = self.query_table("WeeklyReportTable")
-                totalHours = sum(data[idPrimaryKeyToUpdate-1][GC.SUNDAY_COLUMN_NUMBERS:GC.SATURDAY_COLUMN_NUMBERS+1])
-                xComments = data[idPrimaryKeyToUpdate-1][GC.IN_COMMENTS_COLUMN_NUMBERS:GC.OUT_COMMENTS_COLUMN_NUMBERS+1]
-                self.cursor.execute("UPDATE WeeklyReportTable SET totalHours = ? WHERE id = ?", (totalHours, idPrimaryKeyToUpdate))
-                
-                data = self.query_table("DebugLoggingTable")
-                finalResult = [item for item in data if str(id) in item[1]]
-                dateToCalulate = date.isoformat(timespec="minutes")[0:10]
-                dayOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                if data ==  None:
+                    pass
+                else:
+                    totalHours = sum(data[idPrimaryKeyToUpdate-1][GC.SUNDAY_COLUMN_NUMBERS:GC.SATURDAY_COLUMN_NUMBERS+1])
+                    xComments = data[idPrimaryKeyToUpdate-1][GC.IN_COMMENTS_COLUMN_NUMBERS:GC.OUT_COMMENTS_COLUMN_NUMBERS+1]
+                    self.cursor.execute("UPDATE WeeklyReportTable SET totalHours = ? WHERE id = ?", (round(totalHours, 2), idPrimaryKeyToUpdate))
+                    
+                    data = self.query_table("DebugLoggingTable")
+                    finalResult = [item for item in data if str(id) in item[1]]
+                    dateToCalulate = date.isoformat(timespec="minutes")[0:10]
+                    dayOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
                 
                 if finalResult[0][GC.LOG_MESSAGE_COLUMN_NUMBER].endswith(dateToCalulate):
                     newInText = xComments[0][0:] + " " + dayOfWeek[date.weekday()]
@@ -314,7 +318,7 @@ class Database:
                     self.cursor.execute("UPDATE WeeklyReportTable SET outComments = ? WHERE id = ?", (newOutText, idPrimaryKeyToUpdate))
 
             else:
-                print("INVALID USER ID")
+                print("INVALID USER ID ???")
                     
         except ValueError:
             self.insert_debug_logging_table(f'Invalid date format when generating weekly report on {date}')
@@ -472,10 +476,10 @@ if __name__ == "__main__":
     for data in users:
         employeeID = data[GC.EMPLOYEE_ID_COLUMN_NUMBER]
         
-        currentDateObj = datetime(2023, 8, 22, 5, 0, 0) #db.get_date_time()
+        currentDateObj = datetime(2023, 8, 27, 5, 0, 0) #db.get_date_time()
         dayOfWeek = currentDateObj.weekday()
         currentTime = currentDateObj.time()
-        if dayOfWeek == GC.MONDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
+        if dayOfWeek == GC.SUNDAY and (ELEVEN_PM < currentTime and currentTime < THREE_AM):
             canUpdateweeklyReportTable = False
             
         if canUpdateweeklyReportTable:
@@ -483,7 +487,7 @@ if __name__ == "__main__":
             db.insert_weekly_report_table(employeeID, currentDateObj)
 
     
-    db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
+    #db.export_table_to_csv(["WeeklyReportTable", "CheckInTable", "CheckOutTable"])
     
     today = db.get_date_time()
     print(f'Hours = {db.calculate_time_delta(1001, today):.4f}')

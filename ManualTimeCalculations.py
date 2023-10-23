@@ -1,14 +1,21 @@
 import sqlite3                              # https://docs.python.org/3/library/sqlite3.html
 from datetime import datetime, timedelta 	# Create calendar dates & time objects https://docs.python.org/3/library/datetime.html
 
-import schedule                             # Python functions periodicall https://schedule.readthedocs.io/en/stable/
-import threading                            # https://schedule.readthedocs.io/en/stable/background-execution.html
 from time import sleep                      # Import only the sleep function to pause prpgram execution 
 import pytz 					            # World Timezone Definitions  https://pypi.org/project/pytz/
 
 import csv
 
 import GlobalConstants as GC
+
+EMPLOYEE_NAMES = ["Erick Maldonado", "Dago Reyes Astello", "Cesar Rene Cabrera", "Adrian Cardenas", "Miguel Lopez Perez", "Edgar Maldonado",
+                      "German Maranto", "Juan  Antonio", "Victor Mata", "Eric  Mata Vazquez", "David Montoya", "Omar Palomo Galvan", "Nicolas Gomez Perez",
+                      "Felipe Otero", "Ulises Rodriguez", "Fidencio Santiz Lopez", "Nicolas Perez Santiz", "Rigoberto Savedra", "Jorge Velazquez",
+                      "Oscar Cruz Zaleta", "Oscar Rodriguez", "Osiel Hernandez", "Elias Castaneda", "Thomas Humphrey", "Chase Soliz", "Derrick Lohner"]
+    
+EMPLOYEE_IDS = [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025]
+
+EMPLOYEE_ID_OFFSET = 1000
 
 def get_date_time() -> datetime:
     """ Get date and time in Marianna, FL timezone, independent of location on server running code
@@ -97,18 +104,31 @@ def calculate_time_delta(id: int, date: datetime) -> tuple:
         return elaspedHours, clockedIn, clockedOut
 
 
-def job():
-    employeeIDs = [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025]
-    
+def create_dates():
     dates = []
-    for dayDelta in range(8, 1, -1):
-        dates.append((get_date_time() - timedelta(days=dayDelta)).isoformat(timespec="minutes")[0:10])
+    
+    now = get_date_time()
+
+    # Check day of week script is being run (7, 0, -1) if run on Sunday nigth and (8, 1, -1 in run Monday morning))
+    if now.weekday() == GC.SUNDAY: 
+        for dayDelta in range(7, 0, -1):
+            dates.append((get_date_time() - timedelta(days=dayDelta)).isoformat(timespec="minutes")[0:10])
+    elif now.weekday() == GC.MONDAY:
+        for dayDelta in range(8, 1, -1):   
+            dates.append((get_date_time() - timedelta(days=dayDelta)).isoformat(timespec="minutes")[0:10])
+        
+    return dates
+
+
+def labor_report():
+    dates = create_dates()
     
     filename = dates[0] + '_' + dates[6] + '_LaborerTimeReport.csv'
     with open(filename, 'a', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Employee ID', 'Total Hours', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'CheckIn Comment', 'CheckOut Comment'])
-        for id in employeeIDs:
+        writer.writerow(['Employee Name', 'Employee ID', 'Total Hours', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'CheckIn Comment', 'CheckOut Comment'])
+        for id, name in zip(EMPLOYEE_IDS, EMPLOYEE_NAMES):
+            print(f'{name} has ID #{id}')
             dailyHours = []
             dailyCheckedIn = []
             dailyCheckedOut = []
@@ -131,49 +151,59 @@ def job():
             
             
             if totalHours == 0:
-                data = [id, round(totalHours, 2), dailyHours[0], dailyHours[1], dailyHours[2], dailyHours[3], dailyHours[4], dailyHours[5], dailyHours[6], 'Missed: All Days', 'Missed: All Days']
+                data = [name, id, round(totalHours, 2), dailyHours[0], dailyHours[1], dailyHours[2], dailyHours[3], dailyHours[4], dailyHours[5], dailyHours[6], 'Missed: All Days', 'Missed: All Days']
             else:
-                data = [id, round(totalHours, 2), dailyHours[0], dailyHours[1], dailyHours[2], dailyHours[3], dailyHours[4], dailyHours[5], dailyHours[6], inComment, outComment]
+                data = [name, id, round(totalHours, 2), dailyHours[0], dailyHours[1], dailyHours[2], dailyHours[3], dailyHours[4], dailyHours[5], dailyHours[6], inComment, outComment]
             
             writer.writerow(data)
 
 
-def run_continuously(interval=2*GC.ONE_HOUR):
-    """ Continuously run, while executing pending jobs at each elapsed time interval.
+def check_x_report(direction: int):
+    dates = create_dates()
+        
+    conn = sqlite3.connect('TimeReport.db')
+    cursor = conn.cursor()
     
-        @return cease_continuous_run: threading. Event which can be set to cease continuous run. Please note that it is
-        intended behavior that run_continuously() does not run missed jobs*. For example, if you've registered a job that
-        should run every minute and you set a continuous run interval of one hour then your job won't be run 60 times
-        at each interval but only once.
-    """
-    cease_continuous_run = threading.Event()
+    if direction == GC.CLOCK_IN:
+        filename = dates[0] + '_' + dates[6] + '_CheckInTimes.csv'
+        cursor.execute("SELECT * FROM CheckInTable")
+            
+    else:
+        filename = dates[0] + '_' + dates[6] + '_CheckOutTimes.csv'
+        cursor.execute("SELECT * FROM CheckOutTable")
+    
+    data = cursor.fetchall()
+    result = list(filter(lambda t: t[GC.TIMESTAMP_COLUMN_NUMBER] >= dates[0], data))
+    #print(result)
+    
+    with open(filename, 'a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Employee Name', 'Employee ID', 'Timestamp'])
+        for entry in result:
+            emplopyeeName = EMPLOYEE_NAMES[entry[GC.EMPLOYEE_ID_COLUMN_NUMBER] - EMPLOYEE_ID_OFFSET] 
+            employeeId = entry[GC.EMPLOYEE_ID_COLUMN_NUMBER]
+            timestamp = entry[GC.TIMESTAMP_COLUMN_NUMBER]
+            
+            data = [emplopyeeName, employeeId, timestamp]
+            writer.writerow(data)
+            
+        file.close()
+            
 
-    class ScheduleThread(threading.Thread):
-        @classmethod
-        def run(cls):
-            while not cease_continuous_run.is_set():
-                schedule.run_pending()
-                sleep(interval)
-
-    continuous_thread = ScheduleThread()
-    continuous_thread.start()
-    return cease_continuous_run
+def job():
+    labor_report()
+    check_x_report(GC.CLOCK_IN)
+    check_x_report(GC.CLOCK_OUT)
 
 
 if __name__ == "__main__":
 
     try:
-        #job()
-        
-        schedule.every().day.at("02:00").do(job)
-        ##schedule.every(10).sunday.at("02:00").do(job)
-        stopRun = run_continuously()
-        while True:
-            sleep(60)
+        job()
+
         
     except KeyboardInterrupt:
-        stopRun.set()
-        
-        # Sleep so that only single 'Ctrl+C' is needed to exit program
+        # Sleep so that only a single 'Ctrl+C' is needed to exit program
         sleep(3)                    
         raise SystemExit
+
