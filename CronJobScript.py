@@ -7,9 +7,10 @@ import schedule
 
 print("Testing CronJob Script")
 
-def is_sunday_pass_2330(testing=True):
+def is_sunday_pass_2330(testing=False):
     if testing:
         return True
+    
     # Get the current date and time
     now = ManualTimeCalculations.get_date_time()
 
@@ -37,8 +38,9 @@ def job():
         filenames[2] = dates[0] + '_' + dates[6] + '_CheckInTimes.csv'
         
         for file in filenames:
-            #command = ['mv', file, '/Users/venus/Excel Time Card Reports']
-            command = ['mv', file, '/Users/venus']
+            #command = ['mv', file, '/Users/venus/Excel Time Card Reports'] # Used when run on Blaze's Mac Book Pro
+            command = ['mv', file, '/TimeCardReports']                            # Used when run on Linodes/TimeTracker-Debian-US-Southeast instance
+
             moveProcess = subprocess.Popen(command).pid
             print(f'PID = {moveProcess}')
         
