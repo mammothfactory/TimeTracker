@@ -185,7 +185,7 @@ if __name__ in {"__main__", "__mp_main__"}:
     ui.timer(GC.DATABASE_WEEKLY_REPORT_UPDATE_TIME, lambda: generate_report())
     ui.timer(GC.CLOCK_UPDATE_TIME, lambda: clock.set_content(build_svg()))
 
-    invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
+    invalidIdLabel = ui.label('ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)').style("color: red; font-size: 150%; font-weight: 300").classes("self-center")
     invalidIdLabel.visible = False
 
     inputBox = ui.number(label='Ingrese su identificación de empleado', placeholder='Enter your Employee ID', value=None, \
@@ -194,21 +194,21 @@ if __name__ in {"__main__", "__mp_main__"}:
                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
                         validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
 
-    inputBox.classes("self-center").style("padding: 40px 0px; width: 650px; font-size: 30px;").props('clearable')
+    inputBox.classes("self-center").style("padding: 40px 0px; width: 600px; font-size: 30px;").props('clearable')
 
     
     # Invisible character https://invisibletext.com/#google_vignette
     with ui.row().classes("self-center"):
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-80"):
-            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 125%; font-weight: 300')
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-24 w-64"):
+            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 90%; font-weight: 300')
             ui.icon('login')
 
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-80"):
-            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 125%; font-weight: 300")
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-24 w-64"):
+            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 90%; font-weight: 300")
             ui.icon('logout')
 
-    clockedInLabel = ui.label(f'{validEmployeeID} - REGISTRO EN (CLOCKED IN)').style("color: green; font-size: 250%; font-weight: 300").classes("self-center")
-    clockedOutLabel = ui.label(f'{validEmployeeID} - FINALIZADO (CLOCKED OUT)').style("color: red; font-size: 250%; font-weight: 300").classes("self-center")
-    tryAgainLabel = ui.label('INTENTAR OTRA VEZ (TRY AGAIN)').style("color: red; font-size: 300%; font-weight: 300").classes("self-center")
+    clockedInLabel = ui.label(f'{validEmployeeID} - REGISTRO EN (CLOCKED IN)').style("color: green; font-size: 100%; font-weight: 300").classes("self-center")
+    clockedOutLabel = ui.label(f'{validEmployeeID} - FINALIZADO (CLOCKED OUT)').style("color: red; font-size: 100%; font-weight: 300").classes("self-center")
+    tryAgainLabel = ui.label('INTENTAR OTRA VEZ (TRY AGAIN)').style("color: red; font-size: 200%; font-weight: 300").classes("self-center")
 
     ui.run(native=GC.RUN_ON_NATIVE_OS, port=GC.LOCAL_HOST_PORT_FOR_GUI)
