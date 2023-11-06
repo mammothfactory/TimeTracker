@@ -47,25 +47,25 @@ def build_svg() -> str:
     """
     now = db.get_date_time()
     return f'''
-    <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="300" cy="300" r="280" stroke="black" stroke-width="4" fill="white" />
-    <line x1="300" y1="300" x2="300" y2="100" stroke="black" stroke-width="6" transform="rotate({now.minute / 60 * 360} 300 300)" />
-    <line x1="300" y1="300" x2="300" y2="140" stroke="black" stroke-width="6" transform="rotate({now.hour / 12 * 360} 300 300)" />
-    <circle cx="300" cy="300" r="20" fill="black" />
+    <svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="200" cy="200" r="180" stroke="black" stroke-width="4" fill="white" />
+    <line x1="200" y1="200" x2="200" y2="50" stroke="black" stroke-width="6" transform="rotate({now.minute / 60 * 360} 200 200)" />
+    <line x1="200" y1="200" x2="200" y2="100" stroke="black" stroke-width="6" transform="rotate({now.hour / 12 * 360} 200 200)" />
+    <circle cx="200" cy="200" r="20" fill="black" />
     
     <!-- Hour marks -->
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(0 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(30 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(60 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(90 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(120 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(150 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(180 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(210 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(240 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(270 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(300 300 300)" />
-    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(330 300 300)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="10" transform="rotate(0 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(30 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(60 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="10" transform="rotate(90 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(120 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(150 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="10" transform="rotate(180 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(210 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(240 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="10" transform="rotate(270 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(300 200 200)" />
+    <line x1="200" y1="50" x2="200" y2="70" stroke="black" stroke-width="3" transform="rotate(330 200 200)" />
     </svg>
     '''
 
