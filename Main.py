@@ -47,32 +47,26 @@ def build_svg() -> str:
     """
     now = db.get_date_time()
     return f'''
-        <svg width="800" height="800" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <circle cx="400" cy="400" r="200" fill="#fff"/>
-            <use transform="matrix(-1,0,0,1,800,0)" xlink:href="#c"/>
-            <g id="c">
-                <g id="d">
-                    <path d="m400 40v107" stroke="#000" stroke-width="26.7"/>
-                    <g id="a">
-                        <path d="m580 88.233-42.5 73.612" stroke="#000" stroke-width="26.7"/>
-                        <g id="e">
-                            <path id="b" d="m437.63 41.974-3.6585 34.808" stroke="#000" stroke-width="13.6"/>
-                            <use transform="rotate(6 400 400)" xlink:href="#b"/>
-                        </g>
-                        <use transform="rotate(12 400 400)" xlink:href="#e"/>
-                    </g>
-                    <use transform="rotate(30 400 400)" xlink:href="#a"/>
-                    <use transform="rotate(60 400 400)" xlink:href="#a"/>
-                </g>
-                <use transform="rotate(90 400 400)" xlink:href="#d"/>
-            </g>
-            <g transform="rotate({250 + now.hour / 12 * 360} 400 400)">
-                <path d="m334.31 357.65-12.068 33.669 283.94 100.8 23.565-10.394-13.332-24.325z"/>
-            </g>
-            <g transform="rotate({117 + now.minute / 60 * 360} 400 400)">
-                <path d="m480.73 344.98 11.019 21.459-382.37 199.37-18.243-7.2122 4.768-19.029z"/>
-            </g>
-        </svg>
+    <svg width="600" height="600" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="300" cy="300" r="280" stroke="black" stroke-width="4" fill="white" />
+    <line x1="300" y1="300" x2="300" y2="100" stroke="black" stroke-width="6" transform="rotate({now.minute / 60 * 360} 300 300)" />
+    <line x1="300" y1="300" x2="300" y2="140" stroke="black" stroke-width="6" transform="rotate({now.hour / 12 * 360} 300 300)" />
+    <circle cx="300" cy="300" r="20" fill="black" />
+    
+    <!-- Hour marks -->
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(0 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(30 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(60 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(90 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(120 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(150 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(180 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(210 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(240 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="10" transform="rotate(270 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(300 300 300)" />
+    <line x1="300" y1="50" x2="300" y2="70" stroke="black" stroke-width="3" transform="rotate(330 300 300)" />
+    </svg>
     '''
 
 
@@ -200,17 +194,17 @@ if __name__ in {"__main__", "__mp_main__"}:
                         on_change=lambda e: invalidIdLabel.set_text(sanitize_employee_id(e.value)), \
                         validation={'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)': lambda value: int(sanitizedID) <= 9999})
 
-    inputBox.classes("self-center").style("padding: 40px 0px; width: 800px; font-size: 30px;").props('clearable')
+    inputBox.classes("self-center").style("padding: 40px 0px; width: 650px; font-size: 30px;").props('clearable')
 
     
     # Invisible character https://invisibletext.com/#google_vignette
     with ui.row().classes("self-center"):
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-96"):
-            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 150%; font-weight: 300')
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_IN, sanitizedID), color="green").classes("relative  h-32 w-80"):
+            ui.label('RELOJ EN (CLOCK IN) ㅤ').style('font-size: 125%; font-weight: 300')
             ui.icon('login')
 
-        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-96"):
-            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 150%; font-weight: 300")
+        with ui.button(on_click=lambda e: clock_x(GC.CLOCK_OUT, sanitizedID), color="red").classes("relative  h-32 w-80"):
+            ui.label('RELOJ DE SALIDA (CLOCK OUT) ㅤ').style("font-size: 125%; font-weight: 300")
             ui.icon('logout')
 
     clockedInLabel = ui.label(f'{validEmployeeID} - REGISTRO EN (CLOCKED IN)').style("color: green; font-size: 390%; font-weight: 300").classes("self-center")
