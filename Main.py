@@ -83,18 +83,19 @@ async def clock_x(direction: int, sanitizedID: str):
             clockedInLabel.set_text(f'{sanitizedID} - REGISTRO EN (CLOCKED IN)')
             clockedInLabel.visible = True
             db.insert_check_in_table(sanitizedID)
-            set_background('grey')
+            #set_background('grey')
             await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
         
         elif direction == GC.CLOCK_OUT:
             clockedOutLabel.set_text(f'{sanitizedID} - RELOJ DE SALIDA (CLOCK OUT)')
             clockedOutLabel.visible = True
             db.insert_check_out_table(sanitizedID)
-            set_background('grey')
+            #set_background('grey')
             await ui.run_javascript(f'getElement({inputBox.id}).focus()', respond=False)
 
     else:
        tryAgainLabel.visible = True
+       set_background('grey')
 
     inputBox.set_value(None)                          # Clear user input box. Note set_value('') doesn't work :)
 
@@ -112,6 +113,7 @@ def sanitize_employee_id(inputText: str) -> str:
 
     if int(inputText) > 9999 or int(inputText) < 0:
         invalidIdLabel.visible = True
+        set_background('grey')
         return 'ID DE EMPLEADO NO VÁLIDO (INVALID EMPLOYEE ID)'
     else:
        invalidIdLabel.visible = False

@@ -229,7 +229,7 @@ class Database:
         finally:
             nameResults = []
             nameResult = self.search_users_table(str(id))
-            if len(nameResult) > 0:
+            if len(nameResults) > 0:
                 englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  you already clocked out today'
                 spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  ya saliste hoy'
                 return englishError, spanishError
