@@ -189,12 +189,17 @@ class Database:
             if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked IN TODAY')
             self.cursor.execute("INSERT INTO CheckInTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
             self.commit_changes()
+            return '',''
 
         finally:
+            nameResults= []
             nameResults = self.search_users_table(str(id))
-            englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} you already clocked in today'
-            spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} ya has fichado hoy'
-            return englishError, spanishError
+            if len(nameResults > 0):
+                englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} you already clocked in today'
+                spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]} ya has fichado hoy'
+                return englishError, spanishError
+            else:
+                return '',''
 
 
     def insert_check_out_table(self, id: int) -> tuple:
@@ -219,12 +224,17 @@ class Database:
             if GC.DEBUG_STATEMENTS_ON: print(f'INSERTING {id} since this employee ID has NOT clocked OUT TODAY')
             self.cursor.execute("INSERT INTO CheckOutTable (employeeId, timestamp) VALUES (?, ?)", (id, currentDateTime))
             self.commit_changes()
+            return '',''
 
         finally:
-            nameResults = self.search_users_table(str(id))
-            englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  you already clocked out today'
-            spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  ya saliste hoy'
-            return englishError, spanishError
+            nameResults = []
+            nameResult = self.search_users_table(str(id))
+            if len(nameResult>0):
+                englishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  you already clocked out today'
+                spanishError = f'{nameResults[0][GC.FIRST_NAME_COLUMN_NUMBER]} {nameResults[0][GC.LAST_NAME_COLUMN_NUMBER]}  ya saliste hoy'
+                return englishError, spanishError
+            else:
+                return '',''
 
 
     def insert_debug_logging_table(self, debugText: str):
